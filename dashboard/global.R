@@ -1,34 +1,47 @@
-library(shiny); library(dplyr); library(tidyr);
-library(ggplot2); library(readr); library(cowplot); 
-library(shinythemes);library(lubridate); library(kableExtra)
-library(scales); library(broom); library(forcats);
-library(lme4); library(stringr); library(plotly);
-library(writexl); library(DT)
-theme_set(theme_classic(base_size = 12) + 
-              background_grid(color.major = "grey90", 
-                              color.minor = "grey95", 
-                              minor = "xy", major = "xy") +
-              theme(legend.position = "none"))
-
+# Packages ----
+library(broom)
+library(cowplot)
+library(data.table)
+library(dplyr)
+library(DT)
+library(forcats)
+library(ggplot2)
+library(kableExtra)
+library(lme4)
+library(lubridate)
+library(plotly)
+library(scales)
+library(shiny)
+library(shinythemes)
+library(stringr)
+library(tidyr)
+library(writexl)
 url.exists <- RCurl::url.exists
 
-fileurl <- local({
+# Global settings ----
+theme_set(
+    theme_classic(base_size = 12) +
+    background_grid(color.major = "grey90", color.minor = "grey95", minor = "xy", major = "xy") +
+    theme(legend.position = "none")
+)
+
+# Constants ----
+sidast_uppfaert <- "Síðast uppfært ??. mars 2020 klukkan ??:30"
+
+
+# Load data ----
+baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
+d_spa <- local({
     today <- Sys.Date()
-    baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/Output/Public/Iceland_Predictions/"
-    url <- paste0(baseurl, today, ".csv")
-    # Ef er komin inn spá fyrir daginn, annars prófa frá í gær
-    if (url.exists(url)) {
-        url
-    } else {
-        paste0(baseurl, "Iceland_Predictions_", "2020-03-24", ".csv")
-    }
+    url <- paste0(baseurl, "Output/Public/Iceland_Predictions/Iceland_Predictions_", today, ".csv")
+    # Ef er komin inn spá fyrir daginn, annars
+    day <- "2020-03-24"
+    url <- if (url.exists(url)) url else sub("today", day, url, fixed = TRUE)
+    tointeger <- c("median", "upper")
+    fread(url, colClasses = c("Date", "character", "character", "character", "numeric", "numeric"))[,
+      (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
+      .SDcols = tointeger]
 })
-
-
-d_spa <- read_csv(
-    fileurl
-) %>% 
-    mutate_at(vars(median, upper), round)
-
-d <- read_csv("https://raw.githubusercontent.com/bgautijonsson/covid19/master/Input/Test/ECDC_Data.csv")
-sidast_uppfaert <- "Síðast uppfært 23. mars 2020 klukkan 19:30"
+setDF(d_spa)
+d <- fread(paste0(baseurl, "Input/Test/ECDC_Data.csv"))[, date := as.Date(date)]
+setDF(d)
