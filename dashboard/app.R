@@ -1,42 +1,49 @@
 library(shiny); library(dplyr); library(tidyr);
 library(ggplot2); library(readr); library(cowplot); 
-library(googlesheets4); library(shinythemes);
-library(lubridate); library(kableExtra); library(scales)
-library(emmeans); library(broom); library(forcats);
+library(shinythemes);library(lubridate); library(kableExtra)
+library(scales); library(broom); library(forcats);
 library(lme4); library(stringr); library(plotly);
-library(mgcv)
-library(writexl)
-
+library(writexl); library(DT)
 theme_set(theme_classic(base_size = 12) + 
               background_grid(color.major = "grey90", 
                               color.minor = "grey95", 
                               minor = "xy", major = "xy") +
               theme(legend.position = "none"))
-d_smit <- read_csv("Data/smit.csv") %>% 
-    filter(tegund != "Annad") %>% 
-    mutate(tegund = fct_recode(tegund, "Erlend" = "Erlendis", "Innlend" = "Innanlands"))
-d_sottkvi <- read_csv("Data/sottkvi.csv")
-d_spitali <- read_csv("Data/spitali.csv") 
-d_syni <- read_csv("Data/syni.csv")
 
-d_samtals <- d_smit %>% 
-    filter(tegund == "Samtals")
+url.exists <- RCurl::url.exists
 
-euro_smit <- read_csv("Data/ECDC_Data.csv")
-sidast_uppfaert <- "Síðast uppfært 19. mars 2020 klukkan 17:00"
+fileurl <- local({
+    today <- Sys.Date()
+    baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/Output/"
+    url <- paste0(baseurl, today, ".csv")
+    # Ef er komin inn spá fyrir daginn, annars prófa frá í gær
+    if (url.exists(url)) {
+        url
+    } else {
+        paste0(baseurl, "Iceland_Predictions_", "2020-03-22", ".csv")
+    }
+})
+
+d_spa <- read_csv(
+    fileurl
+) %>% 
+    mutate_at(vars(median, upper), round)
+
+d <- read_csv("https://raw.githubusercontent.com/bgautijonsson/covid19/master/Input/ECDC_Data.csv")
+sidast_uppfaert <- "Síðast uppfært 23. mars 2020 klukkan 19:30"
 
 Sys.setlocale("LC_TIME", "is_IS")
 
 ui <- navbarPage(
     title = "Ísland og COVID19", 
     theme = shinytheme(theme = "flatly"),
-    ##### Smitaþróun #####
-    tabPanel(title = "Smitaþróun",
+    ##### Smitafjöldi #####
+    tabPanel(title = "Þróun",
              sidebarLayout(
                  sidebarPanel(
                      selectInput(inputId = "continent",
                                  label = "Heimsálfa",
-                                 choices = unique(euro_smit$continent),
+                                 choices = unique(d$continent),
                                  multiple = T, selectize = T,
                                  selected = "Europe"),
                      uiOutput("countries"),
@@ -80,21 +87,54 @@ ui <- navbarPage(
                                  tabPanel("Fjöldi",
                                           plotlyOutput("euro_plot_n", height = "600px")),
                                  tabPanel("Tíðni",
-                                          #textOutput("euro_plot_p_priortext"), br(),
-                                          plotlyOutput("euro_plot_p", height = "600px")),
-                                 tabPanel("Samanburður",
-                                          plotlyOutput("lmer_plot", height = "600px"))
+                                          plotlyOutput("euro_plot_p", height = "600px"))
                      )
                  )
              )
     ),
+    ##### Aukning #####
+    tabPanel(title = "Aukning",
+             sidebarLayout(
+                 sidebarPanel(
+                     selectInput(inputId = "continent_samanburdur",
+                                 label = "Heimsálfa",
+                                 choices = unique(d$continent),
+                                 multiple = T, selectize = T,
+                                 selected = "Europe"),
+                     uiOutput("countries_to_choose_samanburdur"),
+                     selectInput(inputId = "tegund_samanburdur",
+                                 label = "Hvernig er tími valinn í reikninga?",
+                                 choices = c("Dagsetning", "Dagar eftir að skylirði var náð"),
+                                 multiple = F, selectize = F,
+                                 selected = "Dagsetning"),
+                     uiOutput("param_selection_samanburdur"),
+                     div(actionButton(inputId = "gobutton_samanburdur", label = "Birta", width = "120px"), 
+                         class = "center", align = "middle"),
+                     h6("Höfundur:"),
+                     h6("Brynjófur Gauti Jónsson,"),
+                     h6("Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands"),
+                     div(img(src = "hi_hvs_horiz.png", width = "80%"), align = "middle", class = "center"),
+                     h6("Byggt á daglega uppfærðum gögnum ECDC sem fást í hlekki að neðan"),
+                     a("Hlekkur á gögn", href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"),
+                     h6(sidast_uppfaert),
+                     a("Allan kóða má nálgast hér", href = "https://github.com/bgautijonsson/covid19")
+                     
+                 ),
+                 
+                 mainPanel(
+                     tabsetPanel(type = "tabs",
+                                 tabPanel("Höfðatala",
+                                          plotlyOutput("lmer_plot", height = "600px"))
+                     )
+                 )
+             )),
     ##### Töfluyfirlit #####
     tabPanel(title = "Töfluyfirlit",
              sidebarLayout(
                  sidebarPanel(
                      selectInput(inputId = "countries_table", 
                                  label = "Lönd", 
-                                 choices = unique(euro_smit$country),
+                                 choices = unique(d$country),
                                  multiple = T, selectize = T,
                                  selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")),
                      uiOutput("countries_to_table"),
@@ -113,13 +153,93 @@ ui <- navbarPage(
                      a("Allan kóða má nálgast hér", href = "https://github.com/bgautijonsson/covid19")
                  ),
                  mainPanel(
-                    tableOutput("summary_table"),
-                    conditionalPanel(
-                       condition = "input.gobutton2>0", 
-                       downloadButton("downloadData", label = "Sækja gögn")
+                     tableOutput("summary_table"),
+                     conditionalPanel(
+                         condition = "input.gobutton2>0",
+                         downloadButton(outputId = "table_download", label = "Sækja gögn")
+                     )
+                 )
+             )
+    ),
+    ##### Forspá #####
+    tabPanel(
+        title = "Spá",
+        sidebarLayout(
+            sidebarPanel(
+                selectInput(
+                    inputId = "tegund_forspa",
+                    label = "Sjá spá fyrir",
+                    choices = c("Uppsafnaðan fjölda" = "cumulative", "Virkan fjölda" = "active")
+                ),
+                selectInput(
+                    inputId = "breyta_forspa",
+                    label = "Sjá spá fyrir fjölda",
+                    choices = c("Greindra smita" = "cases", "Á spítala" = "hospital", "Á gjörgæslu" = "icu")
+                ),
+                selectInput(inputId = "byage_forspa", label = "Birta eftir aldurs hópum?",
+                            choices = c("Aldursskipting", "Heild"), 
+                            selected = "Heild"),
+                fluidRow(
+                    column(6,
+                           dateInput("date_from_forspa", 
+                                     label = "Frá",
+                                     value = "2020-03-04", 
+                                     min = "2020-03-02", 
+                                     max = "2020-05-01")),
+                    column(6,
+                           dateInput("date_to_forspa", 
+                                     label = "Til",
+                                     value = "2020-03-21", 
+                                     min = "2020-03-02", 
+                                     max = "2020-05-01"))),
+                div(actionButton(inputId = "gobutton_forspa", label = "Birta gögn", width = "120px"), 
+                    class = "center", align = "middle"),
+                HTML("<br>"),
+                downloadButton("downloadData_forspa", label = "Sækja töflu"),
+                HTML("<br>"),
+                h6("Höfundar:"),
+                h6("Brynjófur Gauti Jónsson og Sindri Baldur"),
+                h6("Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands"),
+                div(img(src = "hi_hvs_horiz.png", width = "80%"), align = "middle", class = "center"),
+                h6("Byggt á daglega uppfærðum gögnum ..."),
+                h6(sidast_uppfaert),
+                a("Allan kóða má nálgast hér", href = "https://github.com/bgautijonsson/covid19")
+            ),
+            mainPanel(
+                tabsetPanel(
+                    type = "tabs",
+                    tabPanel(
+                        "Tafla",
+                        dataTableOutput(outputId = "tafla")
                     )
                 )
-             ))
+            )
+        )
+    ),
+    ##### Fróðleikur #####
+    tabPanel(title = "Fróðleikur", 
+             sidebarLayout(
+                 sidebarPanel(
+                     h6("Höfundur:"),
+                     h6("Brynjófur Gauti Jónsson,"),
+                     h6("Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands"),
+                     div(img(src = "hi_hvs_horiz.png", width = "80%"), align = "middle", class = "center"),
+                     h6("Byggt á daglega uppfærðum gögnum ECDC sem fást í hlekk að neðan"),
+                     a("Hlekkur á gögn", href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"),
+                     h6(sidast_uppfaert),
+                     a("Allan kóða má nálgast hér", href = "https://github.com/bgautijonsson/covid19")
+                     
+                 ),
+                 mainPanel(
+                     tabsetPanel(type = "tabs",
+                                 tabPanel("Lögmál smárra talna",
+                                          includeHTML("www/LawOfSmallNumbers.html")
+                                 )
+                     )
+                 )
+             )
+    )
+    
 )
 
 server <- function(input, output, session) {
@@ -128,7 +248,7 @@ server <- function(input, output, session) {
         if (input$selectall > 0) {
             if (input$selectall %% 2 == 1){
                 updateCheckboxGroupInput(session=session, inputId="countries",
-                                         selected = euro_smit %>% 
+                                         selected = d %>% 
                                              filter(continent %in% input$continent) %>% 
                                              .$country)
                 
@@ -149,13 +269,13 @@ server <- function(input, output, session) {
         if ("Europe" %in% input$continent) {
             selectInput(inputId = "countries", 
                         label = "Lönd", 
-                        choices = euro_smit %>% filter(continent %in% input$continent) %>% .$country %>% unique,
+                        choices = d %>% filter(continent %in% input$continent) %>% .$country %>% unique,
                         multiple = T, selectize = T,
                         selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland"))
         } else {
             selectInput(inputId = "countries", 
                         label = "Lönd", 
-                        choices = euro_smit %>% filter(continent %in% input$continent) %>% .$country %>% unique,
+                        choices = d %>% filter(continent %in% input$continent) %>% .$country %>% unique,
                         multiple = T, selectize = T)
         }
     })
@@ -180,7 +300,7 @@ server <- function(input, output, session) {
     euro_plot_n <- eventReactive(input$gobutton1, {
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
-            filtervar <- "cum_cases"
+            filtervar <- "total_cases"
             filtervalue <- input$filtervalue 
         }
         else {
@@ -188,14 +308,14 @@ server <- function(input, output, session) {
             filtervalue <- input$filtervalue / 1000
         }
         if (input$x_var == "Dögum síðan skilyrði að neðan var náð") {
-            p <- euro_smit %>% 
+            p <- d %>% 
                 filter(country %in% input$countries, continent %in% input$continent,
                        !!sym(filtervar) > filtervalue) %>% 
                 group_by(country) %>% 
                 mutate(days = row_number(),
                        chosen = ifelse(country == input$chosen, "chosen", "other")) %>% 
                 ungroup %>% 
-                ggplot(aes(days, cum_cases, 
+                ggplot(aes(days, total_cases, 
                            col = chosen, 
                            size = chosen,
                            alpha = chosen,
@@ -212,12 +332,12 @@ server <- function(input, output, session) {
             if (input$scale == "Logra") p <- p + scale_y_log10()
             ggplotly(p, tooltip = c("x", "y", "country"))
         } else {
-            p <- euro_smit %>% 
+            p <- d %>% 
                 filter(country %in% input$countries, continent %in% input$continent,
                        !!sym(filtervar) > filtervalue) %>% 
                 mutate(days_from_first = as.numeric(date - min(date)),
                        chosen = ifelse(country == input$chosen, "chosen", "other")) %>% 
-                ggplot(aes(date, cum_cases, 
+                ggplot(aes(date, total_cases, 
                            col = chosen, 
                            size = chosen,
                            alpha = chosen,
@@ -242,14 +362,14 @@ server <- function(input, output, session) {
     })
     
     output$euro_plot_n_info <- renderText({
-        data <- nearPoints(euro_smit %>% filter(country %in% c(input$countries)), 
+        data <- nearPoints(d %>% filter(country %in% c(input$countries)), 
                            input$euro_plot_n_click, threshold = 40, addDist = T,
-                           xvar = "days", yvar = "cum_cases")
+                           xvar = "days", yvar = "total_cases")
         data <- data[which.min(data$dist_), ]
         if (length(data$country) == 0) return ("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
         today <- Sys.Date() %>% ymd
         timi <- as.numeric(today - data$date)
-        out <- paste0(data$country, ": Fjöldi var ", round(data$cum_cases, 3), " fyrir ", timi, " dögum")
+        out <- paste0(data$country, ": Fjöldi var ", round(data$total_cases, 3), " fyrir ", timi, " dögum")
         return(out)
     })
     
@@ -258,7 +378,7 @@ server <- function(input, output, session) {
     euro_plot_p <- eventReactive(input$gobutton1, {
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
-            filtervar <- "cum_cases"
+            filtervar <- "total_cases"
             filtervalue <- input$filtervalue 
         }
         else { 
@@ -267,7 +387,7 @@ server <- function(input, output, session) {
         }
         
         if (input$x_var == "Dögum síðan skilyrði að neðan var náð") {
-            p <- euro_smit %>% 
+            p <- d %>% 
                 filter(country %in% input$countries, 
                        continent %in% input$continent,
                        !!sym(filtervar) > filtervalue) %>% 
@@ -291,7 +411,7 @@ server <- function(input, output, session) {
             if (input$scale == "Logra") p <- p + scale_y_log10()
             ggplotly(p, tooltip = c("x", "y", "country"))
         } else {
-            p <- euro_smit %>% 
+            p <- d %>% 
                 filter(country %in% input$countries, continent %in% input$continent,
                        !!sym(filtervar) > filtervalue) %>% 
                 mutate(chosen = ifelse(country == input$chosen, "chosen", "other")) %>% 
@@ -319,7 +439,7 @@ server <- function(input, output, session) {
     })
     
     output$euro_plot_p_info <- renderText({
-        data <- nearPoints(euro_smit %>% filter(country %in% c(input$countries)), 
+        data <- nearPoints(d %>% filter(country %in% c(input$countries)), 
                            input$euro_plot_p_click, threshold = 40, addDist = T,
                            xvar = "days", yvar = "case_rate")
         data <- data[which.min(data$dist_), ]
@@ -333,14 +453,87 @@ server <- function(input, output, session) {
     
     ##### Europe LMER #####
     
-    lmer_plot <- eventReactive(input$gobutton1, {
-        req(input$continent)
-        d <- euro_smit %>% 
-            filter(date >= ymd("2020-03-02"),
-                   continent %in% input$continent) %>% 
-            mutate(days = as.numeric(date - min(date)))
+    output$countries_to_choose_samanburdur <- renderUI({
+        req(input$continent_samanburdur)
+        if ("Europe" %in% input$continent_samanburdur) {
+            selectInput(inputId = "chosen_samanburdur", 
+                        label = "Samanburðarland", 
+                        choices = d %>% 
+                            filter(continent == input$continent_samanburdur) %>% 
+                            .$country %>% 
+                            unique,
+                        selectize = T,
+                        selected =  "Iceland")
+        } else {
+            selectInput(inputId = "chosen_samanburdur", 
+                        label = "Samanburðarland", 
+                        choices = d %>% 
+                            filter(continent == input$continent_samanburdur) %>% 
+                            .$country %>% 
+                            unique,
+                        selectize = T)
+        }
+    })
+    
+    output$param_selection_samanburdur <- renderUI({
+        req(input$tegund_samanburdur)
+        if (input$tegund_samanburdur == "Dagsetning") {
+            h4("Veldu tímabil til að bera saman aukningu í tíðni smita")
+            fluidRow(
+                column(6,
+                       dateInput("date_from_samanburdur", 
+                                 label = "Frá",
+                                 value = "2020-03-04", 
+                                 min = "2020-03-02", 
+                                 max = max(d$date) - 3)),
+                column(6,
+                       dateInput("date_to_samanburdur", 
+                                 label = "Til",
+                                 value = max(d$date), 
+                                 min = "2020-03-08", 
+                                 max = max(d$date))))
+        } else {
+            fluidRow(column(6,
+                            selectInput(inputId = "type_filt_samanburdur",
+                                        label = "Sýna gögn þar sem",
+                                        choices = c("Fjöldi tilvika", "Tíðni tilvika per milljón"),
+                                        multiple = F,
+                                        selected = "Fjöldi tilvika")),
+                     column(6,
+                            numericInput(inputId = "filtervalue_samanburdur",
+                                         label = "Er hærri en", 
+                                         min = 0, max = 100, value = 50)))
+        }
+    })
+    
+    lmer_plot <- eventReactive(input$gobutton_samanburdur, {
+        req(input$continent_samanburdur)
         
-        n_obs <- length(unique(d$country))
+        if (input$tegund_samanburdur == "Dagsetning") {
+            d <- d %>% 
+                filter(date >= ymd(input$date_from_samanburdur),
+                       date <= ymd(input$date_to_samanburdur),
+                       continent %in% input$continent_samanburdur) %>% 
+                mutate(days = as.numeric(date - min(date)))
+            
+            n_obs <- length(unique(d$country))
+        } else {
+            if (input$type_filt_samanburdur == "Fjöldi tilvika") {
+                filter_var <- "total_cases"
+                filter_value <- input$filtervalue_samanburdur
+            }
+            else {
+                filter_var <- "case_rate"
+                filter_value <- input$filtervalue_samanburdur / 1000
+            }
+            
+            d <- d %>% 
+                filter(continent %in% input$continent_samanburdur,
+                       !!sym(filter_var) >= filter_value) %>% 
+                mutate(days = as.numeric(date - min(date)))
+            
+            n_obs <- length(unique(d$country))
+        }
         
         
         m <- lmer(log(case_rate) ~ days + (days | country), data = d,
@@ -349,7 +542,7 @@ server <- function(input, output, session) {
         evo <- coef(m)[[1]][, 2, drop = F] %>%  exp
         evo <- evo[order(evo), , drop = F]
         
-        which_chosen <- which(rownames(evo) == input$chosen)
+        which_chosen <- which(rownames(evo) == input$chosen_samanburdur)
         evo_chosen <- evo[which_chosen, ]
         evo_chosen <- round(evo_chosen - 1, 3)
         mean_evo <- exp(fixef(m)[2]) - 1
@@ -357,8 +550,7 @@ server <- function(input, output, session) {
         p <- tibble(country = rownames(evo),
                     change = evo[, 1]) %>% 
             mutate(country = fct_reorder(country, change),
-                   col = case_when(country == input$chosen ~ "blue",
-                                   country == "Denmark" ~ "red",
+                   col = case_when(country == input$chosen_samanburdur ~ "blue",
                                    TRUE ~ "grey")) %>% 
             ggplot(aes(country, change - 1)) +
             geom_point(aes(col = col), show.legend = F) +
@@ -369,7 +561,7 @@ server <- function(input, output, session) {
                       aes(label = "Meðalaukning", 
                           x = 2, y = mean_evo + 0.05),
                       size = 4) +
-            # Label Iceland
+            # Label Chosen
             geom_text(data = tibble(),
                       aes(label = percent(evo_chosen),
                           x = which_chosen,
@@ -381,7 +573,7 @@ server <- function(input, output, session) {
             scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
             scale_colour_manual(values = c("blue", "grey", "red")) +
             coord_flip() +
-            labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) eftir 2. mars") +
+            labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) á völdu tímabili") +
             theme(axis.title = element_blank(),
                   text = element_text(size = 12)) +
             background_grid(major = "none", minor = "none")
@@ -416,18 +608,18 @@ server <- function(input, output, session) {
         }
     })
     
-    summary_table_raw <- eventReactive(input$gobutton2, {
+    summary_table <- eventReactive(input$gobutton2, {
         req(input$sort_col)
         cols <- list("Landi" = "country", 
                      "Tilfellum" = "cases", 
                      "Tíðni" = "incidence", 
                      "Fyrsta smiti" = "days")
-        out <- euro_smit %>% 
+        out <- d %>% 
             filter(country %in% input$countries_table) %>% 
             group_by(country) %>% 
-            summarise(cases = max(cum_cases),
+            summarise(cases = max(total_cases),
                       incidence = round(cases / max(pop) * 1000, 4),
-                      days = max(days),
+                      days = as.numeric(max(date) - min(date)),
                       first = min(date)) %>% 
             arrange(desc(!!sym(cols[[input$sort_col]])))
         
@@ -438,26 +630,80 @@ server <- function(input, output, session) {
             out <- out %>% 
                 arrange(desc(!!sym(cols[[input$sort_col]])))
         }
-        names(out) <- c("Land", "Tilfelli", "Tíðni (per 1000)", "Dagar frá öðru smiti", "Dagsetning annars smits")
-        out
-    })
-    output$downloadData <- downloadHandler(
-        filename =  function() "toflu_yfirlit.xlsx",
-        content = function(file) {write_xlsx(summary_table_raw(), file)}
-    )
-    
-    summary_table <- reactive({
-        out <- summary_table_raw()
+        names(out) <- c("Land", "Tilfelli", "Tíðni (per 1000)", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
+        
         icel <- which(out$Land == input$chosen_table)
+        
+        out 
+    })
+    
+    output$summary_table <- function() {
+        out <- summary_table()
+        
+        icel <- which(out$Land == input$chosen_table)
+        
         out %>% 
             kable(format = "html", align = c("l", rep("c", ncol(.) - 1))) %>% 
             kable_styling(bootstrap_options = c("striped", "hover")) %>% 
             row_spec(icel, bold = TRUE, background = "#b3cde3")
-    })
-
-    output$summary_table <- function() {
-        summary_table()
     }
+    
+    output$table_download <- downloadHandler(
+        filename = function() {
+            str_c("tafla_", Sys.Date(), ".xlsx")
+        },
+        content = function(file) {
+            write_xlsx(summary_table(), file)
+        }
+    )
+    
+    ##### Forspá #####
+    
+    out_gogn <- eventReactive(input$gobutton_forspa, {
+        out <- d_spa %>% 
+            filter(type == input$tegund_forspa,
+                   name == input$breyta_forspa,
+                   date >= ymd(input$date_from_forspa),
+                   date <= ymd(input$date_to_forspa))
+        
+        
+        
+        if (input$byage_forspa == "Heild") {
+            out <- out %>% 
+                filter(age == "total") %>% 
+                select(-type, -age, -name,
+                       Dagsetning = date, "Líklegasta spá" = median, "Svartsýn spá" = upper)
+        } else {
+            out <- out %>% 
+                filter(age != "total") %>% 
+                select(-name, -type,
+                       Dagsetning = date, Aldur = age, "Líklegasta spá" = median, "Svartsýn spá" = upper)
+        }
+        
+        out
+    })
+    output$downloadData_forspa <- downloadHandler(
+        filename = function() {
+            paste0(
+                Sys.Date(),
+                "_covid_",
+                input$tegund_forspa, "_",
+                input$breyta_forspa, "_",
+                if (input$byage_forspa != "Heild") "eftir_aldri" else "",
+                "_spagildi.xlsx"
+            )
+        },
+        content = function(file) {write_xlsx(out_gogn(), file)}
+    )
+    output$tafla <- renderDataTable({
+        datatable(
+            out_gogn(),
+            rownames= FALSE,
+            options = list(dom = 't', pageLength = nrow(out_gogn()))
+        )
+    })
+    
+    
 }
 
 shinyApp(ui = ui, server = server)
