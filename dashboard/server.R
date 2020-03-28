@@ -115,7 +115,7 @@ server <- function(input, output, session) {
                     !!sym(filtervar) > filtervalue
                 ) %>% 
                 mutate(
-                    days_from_first = as.numeric(date - min(date)),
+                    days_from_first = as.integer(date - min(date)),
                     chosen = ifelse(country == input$chosen, "chosen", "other")
                 ) %>% 
                 ggplot(
@@ -152,7 +152,7 @@ server <- function(input, output, session) {
         data <- data[which.min(data$dist_), ]
         if (length(data$country) == 0) return("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
         today <- Sys.Date()
-        timi <- as.numeric(today - data$date)
+        timi <- as.integer(today - data$date)
         out <- paste0(data$country, ": Fjöldi var ", round(data$total_cases, 3), " fyrir ", timi, " dögum")
         return(out)
     })
@@ -239,7 +239,7 @@ server <- function(input, output, session) {
         data <- data[which.min(data$dist_), ]
         if (length(data$country) == 0) return ("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
         today <- Sys.Date()
-        timi <- as.numeric(today - data$date)
+        timi <- as.integer(today - data$date)
         out <- paste0(data$country, ": Tíðni var ", round(data$case_rate, 3), " per 1000 íbúa fyrir ", timi, " dögum")
         return(out)
     })
@@ -331,7 +331,7 @@ server <- function(input, output, session) {
                     date <= input$date_to_samanburdur,
                     continent %in% input$continent_samanburdur
                 ) %>% 
-                mutate(days = as.numeric(date - min(date)))
+                mutate(days = as.integer(date - min(date)))
             n_obs <- length(unique(d$country))
         } else {
             if (input$type_filt_samanburdur == "Fjöldi tilvika") {
@@ -347,7 +347,7 @@ server <- function(input, output, session) {
                     continent %in% input$continent_samanburdur,
                     !!sym(filter_var) >= filter_value
                 ) %>% 
-                mutate(days = as.numeric(date - min(date)))
+                mutate(days = as.integer(date - min(date)))
             n_obs <- length(unique(d$country))
         }
         m <- lmer(
@@ -440,7 +440,7 @@ server <- function(input, output, session) {
             summarise(
                 cases = max(total_cases),
                 incidence = round(cases / max(pop) * 1000, 4),
-                days = as.numeric(max(date) - min(date)),
+                days = as.integer(max(date) - min(date)),
                 first = min(date)
             ) %>% 
             arrange(desc(!!sym(cols[[input$sort_col]])))
