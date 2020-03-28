@@ -1,10 +1,7 @@
 # Packages ----
-library(broom)
-library(cowplot)
 library(data.table)
 library(dplyr)
 library(DT)
-library(forcats)
 library(ggplot2)
 library(kableExtra)
 library(lme4)
@@ -13,8 +10,6 @@ library(plotly)
 library(scales)
 library(shiny)
 library(shinythemes)
-library(stringr)
-library(tidyr)
 library(writexl)
 url.exists <- RCurl::url.exists
 

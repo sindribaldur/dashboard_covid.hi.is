@@ -363,7 +363,7 @@ server <- function(input, output, session) {
         mean_evo <- exp(fixef(m)[2]) - 1
         p <- tibble(country = rownames(evo), change = evo[, 1]) %>%
             mutate(
-                country = fct_reorder(country, change),
+                country = factor(reorder(country, change)),
                 col = case_when(country == input$chosen_samanburdur ~ "blue", TRUE ~ "grey")
             ) %>%
             ggplot(aes(country, change - 1)) +
@@ -467,7 +467,7 @@ server <- function(input, output, session) {
     
     output$table_download <- downloadHandler(
         filename = function() {
-            str_c("tafla_", Sys.Date(), ".xlsx")
+            paste0("tafla_", Sys.Date(), ".xlsx")
         },
         content = function(file) {
             write_xlsx(summary_table(), file)
