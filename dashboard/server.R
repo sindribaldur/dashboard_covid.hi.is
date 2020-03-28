@@ -41,182 +41,115 @@ server <- function(input, output, session) {
             }
         )
     })
-    
-    euro_plot_n <- eventReactive(input$gobutton1, {
+
+    throun_df <- reactive({
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
             filtervar <- "total_cases"
             filtervalue <- input$filtervalue 
-        } else {
+        } else { 
             filtervar <- "case_rate"
             filtervalue <- input$filtervalue / 1000
         }
+        d %>%
+            filter(
+                country %in% input$countries, 
+                continent %in% input$continent,
+                !!sym(filtervar) > filtervalue
+            ) %>%
+            mutate(chosen = country != input$chosen)
+    })
+
+    # Fjöldi graf
+    euro_plot_n <- eventReactive(input$gobutton1, {
         if (input$x_var == "Dögum síðan skilyrði að neðan var náð") {
-            p <- d %>% 
-                filter(
-                    country %in% input$countries, 
-                    continent %in% input$continent,
-                    !!sym(filtervar) > filtervalue
-                ) %>% 
-                group_by(country) %>% 
-                mutate(
-                  days = row_number(),
-                  chosen = if_else(country == input$chosen, "chosen", "other")
-                ) %>% 
-                ungroup() %>% 
-                ggplot(
-                    aes(days, total_cases, col = chosen, size = chosen, alpha = chosen, group = country)
-                ) +
-                geom_line(show.legend = FALSE) +
-                scale_colour_manual(values = c("Blue", "Black")) +
-                scale_size_manual(values = c(1.2, 0.8)) + 
-                scale_alpha_manual(values = c(1, 0.3)) +
-                labs(
-                    title = "Þróun fjölda smitaðra á Íslandi og annars staðar",
-                    subtitle = "Sýnd eftir dögum frá öðru smiti hvers lands",
-                    x = "Dagar",
-                    y = "Fjöldi smitaðra"
-                )
-            if (input$scale == "Logra") p <- p + scale_y_log10()
-            ggplotly(p, tooltip = c("x", "y", "country"))
-        } else {
-            p <- d %>% 
-                filter(
-                    country %in% input$countries, 
-                    continent %in% input$continent,
-                    !!sym(filtervar) > filtervalue
-                ) %>% 
-                mutate(
-                    days_from_first = as.integer(date - min(date)),
-                    chosen = ifelse(country == input$chosen, "chosen", "other")
-                ) %>% 
-                ggplot(
-                    aes(date, total_cases, col = chosen, size = chosen, alpha = chosen, group = country)
-                ) +
-                geom_line(show.legend = FALSE) +
-                scale_x_date(date_labels = "%d. %B", breaks = pretty_breaks(8)) +
-                scale_colour_manual(values = c("Blue", "Black")) +
-                scale_size_manual(values = c(1.2, 0.8)) + 
-                scale_alpha_manual(values = c(1, 0.3)) +
-                labs(
-                    title = "Þróun fjölda smitaðra á Íslandi og annars staðar",
+            p <- throun_df() %>%
+                 group_by(country) %>% 
+                 mutate(days = row_number()) %>%
+                 ungroup() %>% 
+                 ggplot(
+                     aes(days, total_cases, col = chosen, alpha = chosen, size = chosen, group = country,  text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases))
+                 ) +
+                 labs(
+                     title = "Þróun fjölda smitaðra á Íslandi og annars staðar",
+                     subtitle = "Sýnd eftir dögum frá öðru smiti hvers lands",
+                     x = "Dagar síðan skilyrði var náð",
+                     y = "Fjöldi smitaðra"
+                 )
+        } else { 
+            # Eftir dagsetningu 
+            p <- throun_df() %>% 
+                 mutate(days_from_first = as.integer(date - min(date))) %>%
+                 ggplot(
+                     aes(date, total_cases, col = chosen, alpha = chosen, size = chosen, group = country,  text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases))
+                 ) +
+                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
+                 labs(
+                     title = "Þróun fjölda smitaðra á Íslandi og annars staðar",
                      subtitle = "Sýnd eftir dagsetningu",
                      y = "Fjöldi smitaðra"
-                ) +
-                theme(axis.title.x = element_blank())
-            if (input$scale == "Logra") p <- p + scale_y_log10()
-            ggplotly(p, tooltip = c("x", "y", "country"))
+                 ) +
+                 theme(axis.title.x = element_blank())
         }
+        p <- p + 
+            geom_line(show.legend = FALSE) +
+            scale_colour_manual(values = c("Blue", "Black")) +
+            scale_size_manual(values = c(1.2, 0.8)) +
+            scale_alpha_manual(values = c(1, 0.3))
+        if (input$scale == "Logra") p <- p + scale_y_log10()
+        ggplotly(p, tooltip = "text")
     })
     
     output$euro_plot_n <- renderPlotly({
         euro_plot_n()
     })
     
-    output$euro_plot_n_info <- renderText({
-        data <- nearPoints(
-            d %>% filter(country %in% input$countries), 
-            input$euro_plot_n_click, 
-            threshold = 40, addDist = TRUE,
-            xvar = "days", 
-            yvar = "total_cases"
-        )
-        data <- data[which.min(data$dist_), ]
-        if (length(data$country) == 0) return("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
-        today <- Sys.Date()
-        timi <- as.integer(today - data$date)
-        out <- paste0(data$country, ": Fjöldi var ", round(data$total_cases, 3), " fyrir ", timi, " dögum")
-        out
-    })
-    
-    ##### Europe Rates #####
+    # Tíðni graf
     euro_plot_p <- eventReactive(input$gobutton1, {
-        req(input$countries, input$chosen)
-        if (input$filtervar == "Fjöldi tilvika") {
-            filtervar <- "total_cases"
-            filtervalue <- input$filtervalue 
-        }
-        else { 
-            filtervar <- "case_rate"
-            filtervalue <- input$filtervalue / 1000
-        }
         if (input$x_var == "Dögum síðan skilyrði að neðan var náð") {
-            p <- d %>% 
-                filter(
-                    country %in% input$countries, 
-                    continent %in% input$continent,
-                    !!sym(filtervar) > filtervalue
-                ) %>% 
-                group_by(country) %>% 
-                mutate(
-                    days = row_number(),
-                    chosen = ifelse(country == input$chosen, "chosen", "other")
-                ) %>% 
-                ungroup() %>% 
-                ggplot(
-                    aes(days, case_rate, col = chosen, size = chosen, alpha = chosen, group = country)
-                ) +
-                geom_line(show.legend = FALSE) +
-                scale_colour_manual(values = c("Blue", "Black")) +
-                scale_size_manual(values = c(1.2, 0.8)) + 
-                scale_alpha_manual(values = c(1, 0.3)) +
-                labs(
-                    title = "Þróun tíðni smitaðra á Íslandi og annars staðar",
-                    subtitle = "Sýnd sem fjöldi per 1000 íbúar eftir dögum frá öðru smiti hvers lands",
-                    x = "Dagar",
-                    y = "Fjöldi smitaðra (per 1000 íbúar)"
-                )
-            if (input$scale == "Logra") p <- p + scale_y_log10()
-            ggplotly(p, tooltip = c("x", "y", "country"))
-        } else {
-            p <- d %>% 
-                filter(
-                    country %in% input$countries, 
-                    continent %in% input$continent,
-                    !!sym(filtervar) > filtervalue
-                ) %>% 
-                mutate(chosen = ifelse(country == input$chosen, "chosen", "other")) %>% 
-                ggplot(
-                    aes(date, case_rate, col = chosen, size = chosen, alpha = chosen, group = country)
-                ) +
-                geom_line(show.legend = FALSE) +
-                scale_x_date(date_labels = "%d. %B", breaks = pretty_breaks(8)) +
-                scale_colour_manual(values = c("Blue", "Black")) +
-                scale_size_manual(values = c(1.2, 0.8)) + 
-                scale_alpha_manual(values = c(1, 0.3)) +
-                labs(
+            p <- throun_df() %>% 
+                 group_by(country) %>% 
+                 mutate(days = row_number()) %>%
+                 ungroup() %>% 
+                 ggplot(
+                     aes(days, case_rate, col = chosen, alpha = chosen, size = chosen, group = country,  text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(case_rate, 3)))
+                 ) +
+                 geom_line(show.legend = FALSE) +
+                 scale_colour_manual(values = c("Blue", "Black")) +
+                 scale_size_manual(values = c(1.2, 0.8)) + 
+                 scale_alpha_manual(values = c(1, 0.3)) +
+                 labs(
                      title = "Þróun tíðni smitaðra á Íslandi og annars staðar",
                      subtitle = "Sýnd sem fjöldi per 1000 íbúar eftir dögum frá öðru smiti hvers lands",
+                     x = "Dagar síðan skilyrði var náð",
                      y = "Fjöldi smitaðra (per 1000 íbúar)"
-                ) +
-                theme(axis.title.x = element_blank())
-            if (input$scale == "Logra") p <- p + scale_y_log10()
-            ggplotly(p, tooltip = c("x", "y", "country"))
+                 )
+        } else {
+            p <- throun_df() %>%
+                 ggplot(
+                     aes(date, case_rate, col = chosen, alpha = chosen, size = chosen, group = country, text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(case_rate, 3)))
+                 ) +
+                 geom_line(show.legend = FALSE) +
+                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
+                 scale_colour_manual(values = c("Blue", "Black")) +
+                 scale_size_manual(values = c(1.2, 0.8)) + 
+                 scale_alpha_manual(values = c(1, 0.3)) +
+                 labs(
+                      title = "Þróun tíðni smitaðra á Íslandi og annars staðar",
+                      subtitle = "Sýnd sem fjöldi per 1000 íbúar eftir dögum frá öðru smiti hvers lands",
+                      y = "Fjöldi smitaðra (per 1000 íbúar)"
+                 ) +
+                 theme(axis.title.x = element_blank())
         }
+        if (input$scale == "Logra") p <- p + scale_y_log10()
+        ggplotly(p, tooltip = "text")
     })
 
     output$euro_plot_p <- renderPlotly({
         euro_plot_p()
     })
-    
-    output$euro_plot_p_info <- renderText({
-        data <- nearPoints(
-            d %>% filter(country %in% c(input$countries)),
-            input$euro_plot_p_click, 
-            threshold = 40, 
-            addDist = TRUE,
-            xvar = "days", 
-            yvar = "case_rate"
-        )
-        data <- data[which.min(data$dist_), ]
-        if (length(data$country) == 0) return ("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
-        today <- Sys.Date()
-        timi <- as.integer(today - data$date)
-        out <- paste0(data$country, ": Tíðni var ", round(data$case_rate, 3), " per 1000 íbúa fyrir ", timi, " dögum")
-        out
-    })
-    
-    ##### Europe LMER #####
+
+    ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
         if ("Europe" %in% input$continent_samanburdur) {
@@ -375,7 +308,7 @@ server <- function(input, output, session) {
         lmer_plot()
     })
     
-    ##### Europe Table #####
+    ##### Töfluyfirlit #####
     output$countries_to_table <- renderUI({
         req(input$countries)
         if ("Iceland" %in% input$countries) {
