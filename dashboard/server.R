@@ -7,7 +7,7 @@ server <- function(input, output, session) {
                     inputId="countries",
                     selected = d %>%
                         filter(continent %in% input$continent) %>% 
-                        .$country
+                        pull(country)
                 )
             }
             else {
@@ -29,7 +29,7 @@ server <- function(input, output, session) {
                 label = "Lönd", 
                 choices = d %>% 
                     filter(continent %in% input$continent) %>% 
-                    .$country %>% 
+                    pull(country) %>% 
                     unique(),
                 multiple = TRUE, 
                 selectize = TRUE,
@@ -41,7 +41,7 @@ server <- function(input, output, session) {
                 label = "Lönd", 
                 choices = d %>% 
                     filter(continent %in% input$continent) %>%
-                    .$country %>%
+                    pull(country) %>%
                     unique(),
                 multiple = TRUE, 
                 selectize = TRUE
@@ -154,7 +154,7 @@ server <- function(input, output, session) {
         today <- Sys.Date()
         timi <- as.integer(today - data$date)
         out <- paste0(data$country, ": Fjöldi var ", round(data$total_cases, 3), " fyrir ", timi, " dögum")
-        return(out)
+        out
     })
     
     ##### Europe Rates #####
@@ -241,7 +241,7 @@ server <- function(input, output, session) {
         today <- Sys.Date()
         timi <- as.integer(today - data$date)
         out <- paste0(data$country, ": Tíðni var ", round(data$case_rate, 3), " per 1000 íbúa fyrir ", timi, " dögum")
-        return(out)
+        out
     })
     
     ##### Europe LMER #####
@@ -253,7 +253,7 @@ server <- function(input, output, session) {
                 label = "Samanburðarland", 
                 choices = d %>% 
                     filter(continent == input$continent_samanburdur) %>% 
-                    .$country %>% 
+                    pull(country) %>% 
                     unique(),
                 selectize = TRUE,
                 selected =  "Iceland"
@@ -264,7 +264,7 @@ server <- function(input, output, session) {
                 label = "Samanburðarland", 
                 choices = d %>% 
                     filter(continent == input$continent_samanburdur) %>% 
-                    .$country %>% 
+                    pull(country) %>% 
                     unique(),
                     selectize = TRUE
             )
@@ -364,7 +364,7 @@ server <- function(input, output, session) {
         p <- tibble(country = rownames(evo), change = evo[, 1]) %>%
             mutate(
                 country = factor(reorder(country, change)),
-                col = case_when(country == input$chosen_samanburdur ~ "blue", TRUE ~ "grey")
+                col = if_else(country == input$chosen_samanburdur, "blue", "grey")
             ) %>%
             ggplot(aes(country, change - 1)) +
             geom_point(aes(col = col), show.legend = FALSE) +
@@ -391,8 +391,7 @@ server <- function(input, output, session) {
             scale_colour_manual(values = c("blue", "grey", "red")) +
             coord_flip() +
             labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) á völdu tímabili") +
-            theme(axis.title = element_blank(),
-                  text = element_text(size = 12)) +
+            theme(axis.title = element_blank(), text = element_text(size = 12)) +
             background_grid(major = "none", minor = "none")
         if (n_obs > 60) {
           p <- p + theme(axis.text.y = element_text(size = 5))
