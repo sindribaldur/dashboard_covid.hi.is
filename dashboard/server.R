@@ -151,7 +151,7 @@ server <- function(input, output, session) {
         )
         data <- data[which.min(data$dist_), ]
         if (length(data$country) == 0) return("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
-        today <- Sys.Date() %>% ymd()
+        today <- Sys.Date()
         timi <- as.numeric(today - data$date)
         out <- paste0(data$country, ": Fjöldi var ", round(data$total_cases, 3), " fyrir ", timi, " dögum")
         return(out)
@@ -238,7 +238,7 @@ server <- function(input, output, session) {
         )
         data <- data[which.min(data$dist_), ]
         if (length(data$country) == 0) return ("Smelltu á línu til að sjá hvaða landi hún tilheyrir")
-        today <- Sys.Date() %>% ymd()
+        today <- Sys.Date()
         timi <- as.numeric(today - data$date)
         out <- paste0(data$country, ": Tíðni var ", round(data$case_rate, 3), " per 1000 íbúa fyrir ", timi, " dögum")
         return(out)
@@ -327,8 +327,8 @@ server <- function(input, output, session) {
         if (input$tegund_samanburdur == "Dagsetning") {
             d <- d %>% 
                 filter(
-                    date >= ymd(input$date_from_samanburdur),
-                    date <= ymd(input$date_to_samanburdur),
+                    date >= input$date_from_samanburdur,
+                    date <= input$date_to_samanburdur,
                     continent %in% input$continent_samanburdur
                 ) %>% 
                 mutate(days = as.numeric(date - min(date)))
@@ -480,8 +480,8 @@ server <- function(input, output, session) {
             filter(
               type == input$tegund_forspa,
               name == input$breyta_forspa,
-              date >= ymd(input$date_from_forspa),
-              date <= ymd(input$date_to_forspa)
+              date >= input$date_from_forspa,
+              date <= input$date_to_forspa
             )
         if (input$byage_forspa == "Heild") {
             out <- out %>% 
