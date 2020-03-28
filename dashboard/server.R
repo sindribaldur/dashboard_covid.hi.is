@@ -5,7 +5,7 @@ server <- function(input, output, session) {
             if (input$selectall %% 2 == 1) {
                 unique(d[d$continent %in% input$continent, "country"])
             } else {
-                selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
+                selected = nordic_countries
             }
         updateCheckboxGroupInput(
             session = session,
@@ -16,10 +16,7 @@ server <- function(input, output, session) {
     
     output$countries <- renderUI({
         req(input$continent)
-        selected <- 
-            if ("Europe" %in% input$continent) {
-                c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
-            }
+        selected <- if ("Europe" %in% input$continent) nordic_countries
         selectInput(
             inputId = "countries",
             label = "Lönd",

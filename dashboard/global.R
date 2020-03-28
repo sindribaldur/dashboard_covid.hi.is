@@ -21,8 +21,8 @@ theme_set(
 )
 
 # Constants ----
-sidast_uppfaert <- "Síðast uppfært ??. mars 2020 klukkan ??:30"
-
+sidast_uppfaert <- "Síðast uppfært 28. mars 2020 klukkan 13:30"
+nordic_countries <- c("Denmark", "Norway", "Finland", "Sweden", "Iceland", "Faroe Islands")
 
 # Load data ----
 baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
