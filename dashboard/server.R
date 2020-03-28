@@ -1,73 +1,48 @@
 server <- function(input, output, session) {
+    ##### Smitafjöldi #####
     observe({
-        if (input$selectall > 0) {
-            if (input$selectall %% 2 == 1){
-                updateCheckboxGroupInput(
-                    session=session, 
-                    inputId="countries",
-                    selected = d %>%
-                        filter(continent %in% input$continent) %>% 
-                        pull(country)
-                )
+        toselect <-
+            if (input$selectall %% 2 == 1) {
+                unique(d[d$continent %in% input$continent, "country"])
+            } else {
+                selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
             }
-            else {
-                updateCheckboxGroupInput(
-                    session=session,
-                    inputId="countries",
-                    selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
-                ) 
-            }
-        }
+        updateCheckboxGroupInput(
+            session = session,
+            inputId = "countries",
+            selected = toselect
+        )
     })
     
-    ##### Europe Counts #####
     output$countries <- renderUI({
         req(input$continent)
-        if ("Europe" %in% input$continent) {
-            selectInput(
-                inputId = "countries", 
-                label = "Lönd", 
-                choices = d %>% 
-                    filter(continent %in% input$continent) %>% 
-                    pull(country) %>% 
-                    unique(),
-                multiple = TRUE, 
-                selectize = TRUE,
-                selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
-            )
-        } else {
-            selectInput(
-                inputId = "countries", 
-                label = "Lönd", 
-                choices = d %>% 
-                    filter(continent %in% input$continent) %>%
-                    pull(country) %>%
-                    unique(),
-                multiple = TRUE, 
-                selectize = TRUE
-            )
-        }
+        selected <- 
+            if ("Europe" %in% input$continent) {
+                c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
+            }
+        selectInput(
+            inputId = "countries",
+            label = "Lönd",
+            choices = unique(d[d$continent %in% input$continent, "country"]),
+            multiple = TRUE, 
+            selectize = TRUE,
+            selected = selected
+        )
     })
     
     output$countries_to_choose <- renderUI({
         req(input$countries)
-        if ("Iceland" %in% input$countries) {
-            selectInput(
-                inputId = "chosen",
-                label = "Samanburðarland",
-                choices = input$countries,
-                selectize = TRUE,
-                selected =  "Iceland"
-            )
-        } else {
-            selectInput(
-                inputId = "chosen", 
-                label = "Samanburðarland", 
-                choices = input$countries,
-                selectize = TRUE,
-                selected =  input$countries[1]
-            )
-        }
+        selectInput(
+            inputId = "chosen",
+            label = "Samanburðarland",
+            choices = input$countries,
+            selectize = TRUE,
+            selected = if ("Iceland" %in% input$countries) {
+                "Iceland"
+            }  else {
+                input$countries[1]
+            }
+        )
     })
     
     euro_plot_n <- eventReactive(input$gobutton1, {
