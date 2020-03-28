@@ -36,12 +36,12 @@ d_spa <- local({
     url <- paste0(baseurl, "Output/Public/Iceland_Predictions/Iceland_Predictions_", today, ".csv")
     # Ef er komin inn spá fyrir daginn, annars
     day <- "2020-03-24"
-    url <- if (url.exists(url)) url else sub("today", day, url, fixed = TRUE)
+    url <- if (url.exists(url)) url else sub(today, day, url, fixed = TRUE)
     tointeger <- c("median", "upper")
     fread(url, colClasses = c("Date", "character", "character", "character", "numeric", "numeric"))[,
       (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
       .SDcols = tointeger]
 })
 setDF(d_spa)
-d <- fread(paste0(baseurl, "Input/Test/ECDC_Data.csv"))[, date := as.Date(date)]
+d <- fread(paste0(baseurl, "Input/ECDC_Data.csv"))[, date := as.Date(date)]
 setDF(d)
