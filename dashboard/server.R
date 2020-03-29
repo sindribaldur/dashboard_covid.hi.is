@@ -330,6 +330,57 @@ server <- function(input, output, session) {
     output$lmer_plot <- renderPlotly({
         lmer_plot()
     })
+
+    vikuleg_aukning <- reactive({
+        # req() ?
+        # input$gobutton_samanburdur
+        d %>% 
+            #arrange(country, date) %>% 
+            group_by(country) %>% 
+            mutate(weekly_cases = as.integer(frollsum(new_cases, n = 7))) %>% 
+            mutate(weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases)) %>% 
+            ungroup() %>% 
+            filter(
+              date >= input$date_from_samanburdur,
+              date <= input$date_to_samanburdur
+            )  %>%
+            filter(total_cases > 0) %>% 
+            filter(
+                country %in% c("Italy", "United States", "Spain", "China", "Iceland", "South Korea"),
+                date >= as.Date("2020-01-26")
+            ) 
+    })
+
+    vikulegt_plot <- eventReactive(input$gobutton_samanburdur, {
+        vikuleg_aukning() %>%
+            ggplot(aes(total_cases, weekly_cases, 
+               group = country,
+               col = country == "Iceland",
+               size = country == "Iceland",
+               alpha = country == "Iceland")) +
+            geom_abline(intercept = 0, slope = 1, lty = 2, size = 1,
+                        col = "grey", alpha = 0.5) +
+            geom_line() +
+            scale_x_log10(breaks = c(1, 3, 10, 30, 100, 300, 1000, 3000,
+                                     10000, 30000, 1e5, 3e5, 1e6),
+                          labels = label_number(accuracy = 1, big.mark = "\U202F")) +
+            scale_y_log10(breaks = c(1, 3, 10, 30, 100, 300, 1000, 3000,
+                                     10000, 30000, 100000, 300000),
+                          labels = label_number(accuracy = 1, big.mark = "\U202F")) +
+            scale_colour_manual(values = c("black", "blue")) +
+            scale_size_manual(values = c(1, 2)) +
+            scale_alpha_manual(values = c(0.5, 1)) +
+            coord_cartesian(xlim = c(1, 1e6),
+                            ylim = c(1, 1e5)) +
+            labs(title = "Vikuleg smit eftir löndum",
+                 x = "Heildarfjöldi smita",
+                 y = "Nýgreind smit undanfarna viku")
+            ggplotly(p)
+    })
+
+    output$viku_plot <- renderPlotly({
+        vikulegt_plot()
+    })
     
     ##### Töfluyfirlit #####
     output$countries_to_table <- renderUI({

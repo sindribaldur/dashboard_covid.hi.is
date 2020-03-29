@@ -116,9 +116,14 @@ ui <- navbarPage(
                     type = "tabs",
                     tabPanel(
                         "Höfðatala",
-                        plotlyOutput("lmer_plot", height = "600px")
+                        plotlyOutput("lmer_plot", height = "800px")
+                    ),
+                    tabPanel(
+                        "Vikuleg smit",
+                        plotlyOutput("viku_plot", height = "600px")
                     )
-                )
+                ),
+
             )
         )
     ),
