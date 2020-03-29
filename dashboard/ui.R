@@ -23,7 +23,7 @@ ui <- navbarPage(
                 selectInput(
                     inputId = "x_var",
                     label = "Sýna þróun eftir",
-                    choices = c("Dagsetningu", "Dögum síðan skilyrði að neðan var náð"),
+                    choices = c("Dagsetningu" = "dags", "Dögum síðan skilyrði að neðan var náð" = "skyl"),
                     multiple = FALSE,
                     selected = "Dagsetningu"
                 ),
