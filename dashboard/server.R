@@ -161,9 +161,9 @@ server <- function(input, output, session) {
             scale_alpha_manual(values = c(comp = 1, rest = 0.3))
         p <- p +
             if (input$scale == "Logra") {
-                 scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
+                 scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
             } else {
-                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F"))
+                scale_y_continuous(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
             }
         ggplotly(p, tooltip = "text")
     })
@@ -260,7 +260,6 @@ server <- function(input, output, session) {
                     continent %in% input$continent_samanburdur
                 ) %>% 
                 mutate(days = as.integer(date - min(date)))
-            n_obs <- length(unique(d$country))
         } else {
             if (input$type_filt_samanburdur == "Fjöldi tilvika") {
                 filter_var <- "total_cases"
@@ -276,8 +275,8 @@ server <- function(input, output, session) {
                     !!sym(filter_var) >= filter_value
                 ) %>% 
                 mutate(days = as.integer(date - min(date)))
-            n_obs <- length(unique(d$country))
         }
+        n_obs <- length(unique(d$country))
         m <- lmer(
             log(case_rate) ~ days + (days | country), 
             data = d,
@@ -336,28 +335,24 @@ server <- function(input, output, session) {
         # input$gobutton_samanburdur
         d %>% 
             #arrange(country, date) %>% 
+            filter(continent %in% input$continent_samanburdur, total_cases > 0) %>%
             group_by(country) %>% 
             mutate(weekly_cases = as.integer(frollsum(new_cases, n = 7))) %>% 
-            mutate(weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases)) %>% 
-            ungroup() %>% 
-            filter(
-              date >= input$date_from_samanburdur,
-              date <= input$date_to_samanburdur
-            )  %>%
-            filter(total_cases > 0) %>% 
-            filter(
-                country %in% c("Italy", "United States", "Spain", "China", "Iceland", "South Korea"),
-                date >= as.Date("2020-01-26")
-            ) 
+            mutate(
+              weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases),
+              chosen = if_else(country == input$chosen_samanburdur, "comp", "rest")
+            ) %>%
+            ungroup()
     })
 
     vikulegt_plot <- eventReactive(input$gobutton_samanburdur, {
-        vikuleg_aukning() %>%
-            ggplot(aes(total_cases, weekly_cases, 
-               group = country,
-               col = country == "Iceland",
-               size = country == "Iceland",
-               alpha = country == "Iceland")) +
+        p <- vikuleg_aukning() %>%
+            ggplot(
+                aes(
+                    total_cases, weekly_cases, 
+                    group = country, col = chosen, size = chosen, alpha = chosen
+                )
+            ) +
             geom_abline(intercept = 0, slope = 1, lty = 2, size = 1,
                         col = "grey", alpha = 0.5) +
             geom_line() +
@@ -367,15 +362,15 @@ server <- function(input, output, session) {
             scale_y_log10(breaks = c(1, 3, 10, 30, 100, 300, 1000, 3000,
                                      10000, 30000, 100000, 300000),
                           labels = label_number(accuracy = 1, big.mark = "\U202F")) +
-            scale_colour_manual(values = c("black", "blue")) +
-            scale_size_manual(values = c(1, 2)) +
-            scale_alpha_manual(values = c(0.5, 1)) +
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
+            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
+            scale_alpha_manual(values = c(comp = 1, rest = 0.3)) +
             coord_cartesian(xlim = c(1, 1e6),
                             ylim = c(1, 1e5)) +
             labs(title = "Vikuleg smit eftir löndum",
                  x = "Heildarfjöldi smita",
                  y = "Nýgreind smit undanfarna viku")
-            ggplotly(p)
+        ggplotly(p)
     })
 
     output$viku_plot <- renderPlotly({

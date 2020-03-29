@@ -8,5 +8,4 @@ Annar kóði tengdur Covid-19 verkefni Heilbrigðisvísindastofnunar Háskóla �
 https://style.tidyverse.org
 
 Except:
-* The contents is indented by four spaces (not two).
-
+* The content is indented by four spaces (not two).
