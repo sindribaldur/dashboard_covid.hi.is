@@ -89,15 +89,18 @@ ui <- navbarPage(
                     selected = "Europe"
                 ),
                 uiOutput("countries_to_choose_samanburdur"),
-                selectInput(
-                    inputId = "tegund_samanburdur",
-                    label = "Hvernig er tími valinn í reikninga?",
-                    choices = c("Dagsetning", "Dagar eftir að skylirði var náð"),
-                    multiple = FALSE, 
-                    selectize = FALSE,
-                    selected = "Dagsetning"
+                conditionalPanel(
+                    condition="input.aukningtab==1",
+                    selectInput(
+                        inputId = "tegund_samanburdur",
+                        label = "Hvernig er tími valinn í reikninga?",
+                        choices = c("Dagsetning", "Dagar eftir að skylirði var náð"),
+                        multiple = FALSE, 
+                        selectize = FALSE,
+                        selected = "Dagsetning"
+                    ),
+                    uiOutput("param_selection_samanburdur")
                 ),
-                uiOutput("param_selection_samanburdur"),
                 div(
                     actionButton(inputId = "gobutton_samanburdur", label = "Birta", width = "120px"),
                     class = "center", align = "middle"
@@ -116,12 +119,15 @@ ui <- navbarPage(
                     type = "tabs",
                     tabPanel(
                         "Höfðatala",
+                        value = 1,
                         plotlyOutput("lmer_plot", height = "800px")
                     ),
                     tabPanel(
                         "Vikuleg smit",
+                        value = 2,
                         plotlyOutput("viku_plot", height = "600px")
-                    )
+                    ),
+                    id = "aukningtab"
                 ),
 
             )

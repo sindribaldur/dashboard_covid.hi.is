@@ -33,10 +33,10 @@ d_spa <- local({
     day <- "2020-03-24"
     url <- if (url.exists(url)) url else sub(today, day, url, fixed = TRUE)
     tointeger <- c("median", "upper")
-    fread(url, colClasses = c("Date", "character", "character", "character", "numeric", "numeric"))[,
+    fread(url, colClasses = c("Date", rep("character", 3), "numeric", "numeric"))[,
       (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
       .SDcols = tointeger]
 })
 setDF(d_spa)
-d <- fread(paste0(baseurl, "Input/ECDC_Data.csv"))[, date := as.Date(date)]
+d <- fread(paste0(baseurl, "Input/ECDC_Data.csv"), encoding = "UTF-8")[, date := as.Date(date)]
 setDF(d)
