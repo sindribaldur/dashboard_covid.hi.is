@@ -94,7 +94,7 @@ ui <- navbarPage(
                     selectInput(
                         inputId = "tegund_samanburdur",
                         label = "Hvernig er tími valinn í reikninga?",
-                        choices = c("Dagsetning", "Dagar eftir að skylirði var náð"),
+                        choices = c("Dagsetningu" = "dags", "Dögum síðan skilyrði að neðan var náð" = "skyl"),
                         multiple = FALSE, 
                         selectize = FALSE,
                         selected = "Dagsetning"

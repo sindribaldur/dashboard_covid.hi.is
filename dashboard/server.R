@@ -175,33 +175,22 @@ server <- function(input, output, session) {
     ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
-        if ("Europe" %in% input$continent_samanburdur) {
-            selectInput(
-                inputId = "chosen_samanburdur", 
-                label = "Samanburðarland", 
-                choices = d %>% 
-                    filter(continent == input$continent_samanburdur) %>% 
-                    pull(country) %>% 
-                    unique(),
-                selectize = TRUE,
-                selected =  "Iceland"
-            )
-        } else {
-            selectInput(
-                inputId = "chosen_samanburdur", 
-                label = "Samanburðarland", 
-                choices = d %>% 
-                    filter(continent == input$continent_samanburdur) %>% 
-                    pull(country) %>% 
-                    unique(),
-                    selectize = TRUE
-            )
-        }
+        selected <- if ("Europe" %in% input$continent_samanburdur) "Iceland"
+        selectInput(
+            inputId = "chosen_samanburdur", 
+            label = "Samanburðarland", 
+            choices = d %>% 
+                filter(continent %in% input$continent_samanburdur) %>% 
+                pull(country) %>% 
+                unique(),
+            selectize = TRUE,
+            selected = selected
+        )
     })
     
     output$param_selection_samanburdur <- renderUI({
         req(input$tegund_samanburdur)
-        if (input$tegund_samanburdur == "Dagsetning") {
+        if (input$tegund_samanburdur == "dags") {
             h4("Veldu tímabil til að bera saman aukningu í tíðni smita")
             fluidRow(
                 column(
@@ -210,8 +199,8 @@ server <- function(input, output, session) {
                         "date_from_samanburdur", 
                         label = "Frá",
                         value = "2020-03-04", 
-                        min = "2020-03-02", 
-                        max = max(d$date) - 3
+                        min = date_range[1], 
+                        max = date_range[2] - 3
                     )
                 ),
                 column(
@@ -219,9 +208,9 @@ server <- function(input, output, session) {
                     dateInput(
                         "date_to_samanburdur", 
                         label = "Til",
-                        value = max(d$date), 
+                        value = date_range[2], 
                         min = "2020-03-08", 
-                        max = max(d$date)
+                        max = date_range[2]
                     )
                 )
             )
@@ -242,7 +231,7 @@ server <- function(input, output, session) {
                         inputId = "filtervalue_samanburdur",
                         label = "Er hærri en", 
                         min = 0, 
-                        max = 100, 
+                        max = 1000, 
                         value = 50
                     )
                 )
@@ -252,14 +241,18 @@ server <- function(input, output, session) {
     
     lmer_plot <- eventReactive(input$gobutton_samanburdur, {
         req(input$continent_samanburdur)
-        if (input$tegund_samanburdur == "Dagsetning") {
+        d <- d %>% 
+            filter(continent %in% input$continent_samanburdur) %>%
+            mutate(days = as.integer(date - min(date)))
+        if (input$tegund_samanburdur == "dags") {
             d <- d %>% 
-                filter(
-                    date >= input$date_from_samanburdur,
-                    date <= input$date_to_samanburdur,
-                    continent %in% input$continent_samanburdur
-                ) %>% 
-                mutate(days = as.integer(date - min(date)))
+                filter(date %between% c(input$date_from_samanburdur, input$date_to_samanburdur))
+            ekki_byrjud <- d %>% 
+              group_by(country) %>% 
+              summarise(ekki_med_case = any(case_rate == 0)) %>% 
+              filter(ekki_med_case) %>% 
+              pull(country)
+            d <- d %>% filter(!country %in% ekki_byrjud)
         } else {
             if (input$type_filt_samanburdur == "Fjöldi tilvika") {
                 filter_var <- "total_cases"
@@ -269,44 +262,30 @@ server <- function(input, output, session) {
                 filter_var <- "case_rate"
                 filter_value <- input$filtervalue_samanburdur / 1000
             }
-            d <- d %>% 
-                filter(
-                    continent %in% input$continent_samanburdur,
-                    !!sym(filter_var) >= filter_value
-                ) %>% 
-                mutate(days = as.integer(date - min(date)))
+            d <- d %>% filter(!!sym(filter_var) >= filter_value)
         }
-        n_obs <- length(unique(d$country))
         m <- lmer(
-            log(case_rate) ~ days + (days | country), 
+            log(case_rate) ~ days + (days | country),
             data = d,
             control = lmerControl(optimizer = "bobyqa")
         )
-        evo <- coef(m)[[1]][, 2, drop = FALSE] %>% exp()
-        evo <- evo[order(evo), , drop = FALSE]
-        which_chosen <- which(rownames(evo) == input$chosen_samanburdur)
-        evo_chosen <- evo[which_chosen, ]
-        evo_chosen <- round(evo_chosen - 1, 3)
-        mean_evo <- exp(fixef(m)[2]) - 1
-        p <- tibble(country = rownames(evo), change = evo[, 1]) %>%
+        temp <- as_tibble(coef(m)$country, rownames = "country") %>%
+            select(-`(Intercept)`) %>%
             mutate(
-                country = factor(reorder(country, change)),
-                col = if_else(country == input$chosen_samanburdur, "blue", "grey")
-            ) %>%
-            ggplot(aes(country, change - 1)) +
+              col = if_else(country == input$chosen_samanburdur, "blue", "grey"),
+              change = exp(days) - 1,
+              country = factor(reorder(country, change)),
+            )
+        evo_chosen <- temp %>% filter(col == "blue") %>% pull(round(change, 3))
+        mean_evo <- exp(fixef(m)[2]) - 1
+        p <- temp %>%
+            ggplot(aes(country, change)) +
             geom_point(aes(col = col), show.legend = FALSE) +
             geom_segment(aes(xend = country, yend = 0, col = col), show.legend = FALSE) +
             geom_hline(yintercept = exp(summary(m)$coefficients[2, 1]) - 1, lty = 2) +
             # Meðalaukning
             geom_text(
-                data = tibble(), 
-                aes(label = "Meðalaukning", x = 2, y = mean_evo + 0.05), size = 4
-            ) +
-            # Label Chosen
-            geom_text(
-                data = tibble(),
-                aes(label = percent(evo_chosen), x = which_chosen, y = evo_chosen + 0.02), 
-                col = "blue", 
+                aes(label = "Meðalaukning", x = 2, y = mean_evo + 0.01), 
                 size = 4
             ) +
             scale_y_continuous(
@@ -315,12 +294,22 @@ server <- function(input, output, session) {
                 expand = expansion(mult = 0.02)
             ) +
             scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-            scale_colour_manual(values = c("blue", "grey", "red")) +
+            scale_colour_manual(values = c(blue = "blue", grey = "grey")) +
             coord_flip() +
             labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) á völdu tímabili") +
             theme(axis.title = element_blank(), text = element_text(size = 12)) +
             background_grid(major = "none", minor = "none")
-        if (n_obs > 60) {
+            # Label Chosen
+            if (any(temp$col == "blue")) {
+              p <- p + 
+                  geom_text(
+                      data = tibble(),
+                      aes(label = percent(evo_chosen), x = input$chosen_samanburdur, y = evo_chosen + 0.02), 
+                      col = "blue", 
+                      size = 4
+                  )
+            }       
+        if (nrow(temp) > 60) {
           p <- p + theme(axis.text.y = element_text(size = 5))
         }
         ggplotly(p, tooltip = c("x", "y", "country"))
