@@ -198,10 +198,10 @@ ui <- navbarPage(
                 ),
                 div(
                     actionButton(inputId = "gobutton_forspa", label = "Birta gögn", width = "120px"), 
+                    HTML("<br><br>"),
+                    downloadButton("downloadData_forspa", label = "Sækja töflu"),
                     class = "center", align = "middle"
                 ),
-                HTML("<br>"),
-                downloadButton("downloadData_forspa", label = "Sækja töflu"),
                 HTML("<br>"),
                 HTML(sidebar_info)
             ),
