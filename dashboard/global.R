@@ -22,7 +22,7 @@ theme_set(
 )
 
 # Constants ----
-sidast_uppfaert <- "Síðast uppfært 28. mars 2020 klukkan 13:30"
+sidast_uppfaert <- "Síðast uppfært 01. apríl 2020 klukkan 19:45"
 nordic_countries <- c("Denmark", "Norway", "Finland", "Sweden", "Iceland", "Faroe Islands")
 
 # Load data ----
@@ -54,7 +54,7 @@ sidebar_info <- glue(
      <div align="middle" class="center">
          <img src="hi_hvs_horiz.png" width="80%"/>
      </div>
-     <h6>Byggt á daglega uppfærðum gögnum ECDC/h6>
+     <h6>Byggt á daglega uppfærðum gögnum ECDC</h6>
      <a href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">Hlekkur á gögn</a>
      <h6>Síðast uppfært 1. apríl 2020 klukkan 19:06</h6>
      <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">Allan kóða má nálgast hér</a>'
