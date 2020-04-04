@@ -115,7 +115,7 @@ ui <- navbarPage(
                     ),
                     id = "aukningtab"
                 ),
-
+                
             )
         )
     ),
@@ -180,9 +180,9 @@ ui <- navbarPage(
                         dateInput(
                             "date_from_forspa", 
                             label = "Frá",
-                            value = "2020-03-04", 
-                            min = "2020-03-02", 
-                            max = "2020-05-01"
+                            value = Sys.Date() - 14, 
+                            min = min(d_spa$date), 
+                            max = Sys.Date() + 21
                         )
                     ),
                     column(
@@ -190,16 +190,15 @@ ui <- navbarPage(
                         dateInput(
                             "date_to_forspa", 
                             label = "Til",
-                            value = "2020-03-21", 
+                            value = Sys.Date() + 21, 
                             min = "2020-03-02", 
-                            max = "2020-05-01"
+                            max = Sys.Date() + 21
                         )
                     )
                 ),
                 div(
-                    actionButton(inputId = "gobutton_forspa", label = "Birta gögn", width = "120px"), 
+                    actionButton(inputId = "gobutton_forspa", label = "Birta", width = "120px"), 
                     HTML("<br><br>"),
-                    downloadButton("downloadData_forspa", label = "Sækja töflu"),
                     class = "center", align = "middle"
                 ),
                 HTML("<br>"),
@@ -209,7 +208,14 @@ ui <- navbarPage(
                 tabsetPanel(
                     type = "tabs",
                     tabPanel(
+                        "Myndrit",
+                        plotOutput(outputId = "myndrit", height = "600px")
+                    )
+                    ,
+                    tabPanel(
                         "Tafla",
+                        HTML("<br>"),
+                        downloadButton("downloadData_forspa", label = "Sækja töflu"),
                         dataTableOutput(outputId = "tafla")
                     )
                 )

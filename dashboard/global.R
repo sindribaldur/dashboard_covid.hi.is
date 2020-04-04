@@ -2,6 +2,7 @@
 library(cowplot)
 library(data.table)
 library(dplyr)
+library(tidyr)
 library(DT)
 library(ggplot2)
 library(kableExtra)
@@ -29,22 +30,30 @@ nordic_countries <- c("Denmark", "Norway", "Finland", "Sweden", "Iceland", "Faro
 baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
 d_spa <- local({
     today <- Sys.Date()
-    url <- paste0(baseurl, "Output/Public/Iceland_Predictions/Iceland_Predictions_", today, ".csv")
+    url <- paste0(baseurl, "Output/Iceland_Predictions/Iceland_Predictions_", today, ".csv")
     # Ef er komin inn spá fyrir daginn, annars
-    day <- "2020-03-24"
+    day <- today - 1
     url <- if (url.exists(url)) url else sub(today, day, url, fixed = TRUE)
     tointeger <- c("median", "upper")
-    fread(url, colClasses = c("Date", rep("character", 3), "numeric", "numeric"))[,
+    fread(url, colClasses = c("Date", rep("character", 3), "numeric", "numeric", "character"))[,
       (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
       .SDcols = tointeger]
-})
+}) %>% 
+  filter(aldursdreifing == "gögn") %>% 
+  select(-aldursdreifing)
 setDF(d_spa)
+
 d <- fread(
     paste0(baseurl, "Input/ECDC_Data.csv"), 
     encoding = "UTF-8")[, date := as.Date(date)][, !c("region", "total_deaths", "new_deaths")]
 setDF(d)
 date_range <- range(d$date)
 
+iceland_d <- fread("https://docs.google.com/spreadsheets/d/1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA/export?format=csv&id=1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA&gid=1788393542",
+                   colClasses = c("Date", rep("numeric", 16))) %>% 
+  select(date = Dagsetning, cumulative_cases = Smit_Samtals, active_cases = Virk_Smit, 
+         active_hospital = Inniliggjandi, active_icu = Gjorgaesla, cumulative_hospital = Spitali_Samtals, cumulative_icu = Gjorgaesla_Samtals) %>% 
+  pivot_longer(-date, names_pattern = "(.+)_(.+)", names_to = c("type", "name"))
 
 # Info in sidebar:
 sidebar_info <- glue(

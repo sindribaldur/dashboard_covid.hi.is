@@ -41,7 +41,7 @@ server <- function(input, output, session) {
             }
         )
     })
-
+    
     throun_df <- reactive({
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
@@ -65,16 +65,16 @@ server <- function(input, output, session) {
             out
         }
     })
-
+    
     # Fjöldi graf
     euro_plot_n <- eventReactive(input$gobutton1, {
         if (input$x_var == "skyl") {
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                       days, total_cases, 
-                       col = chosen, alpha = chosen, size = chosen, group = country, 
-                       text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
+                        days, total_cases, 
+                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
                     )
                 ) +
                 labs(
@@ -88,9 +88,9 @@ server <- function(input, output, session) {
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                         date, total_cases, 
-                         col = chosen, alpha = chosen, size = chosen, group = country, 
-                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
+                        date, total_cases, 
+                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
                     )
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
@@ -108,7 +108,7 @@ server <- function(input, output, session) {
             scale_alpha_manual(values = c(comp = 1, rest = 0.3))
         p <- p +
             if (input$scale == "Logra") {
-                 scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
+                scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
             } else {
                 scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F"))
             }
@@ -148,9 +148,9 @@ server <- function(input, output, session) {
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
                 labs(
-                     title = "Þróun tíðni smitaðra",
-                     subtitle = "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
-                     y = "Fjöldi smitaðra á hverja 1000 íbúa"
+                    title = "Þróun tíðni smitaðra",
+                    subtitle = "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
+                    y = "Fjöldi smitaðra á hverja 1000 íbúa"
                 ) +
                 theme(axis.title.x = element_blank())
         }
@@ -161,17 +161,17 @@ server <- function(input, output, session) {
             scale_alpha_manual(values = c(comp = 1, rest = 0.3))
         p <- p +
             if (input$scale == "Logra") {
-                 scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
+                scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
             } else {
                 scale_y_continuous(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
             }
         ggplotly(p, tooltip = "text")
     })
-
+    
     output$euro_plot_p <- renderPlotly({
         euro_plot_p()
     })
-
+    
     ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
@@ -248,10 +248,10 @@ server <- function(input, output, session) {
             d <- d %>% 
                 filter(date %between% c(input$date_from_samanburdur, input$date_to_samanburdur))
             ekki_byrjud <- d %>% 
-              group_by(country) %>% 
-              summarise(ekki_med_case = any(case_rate == 0)) %>% 
-              filter(ekki_med_case) %>% 
-              pull(country)
+                group_by(country) %>% 
+                summarise(ekki_med_case = any(case_rate == 0)) %>% 
+                filter(ekki_med_case) %>% 
+                pull(country)
             d <- d %>% filter(!country %in% ekki_byrjud)
         } else {
             if (input$type_filt_samanburdur == "Fjöldi tilvika") {
@@ -272,9 +272,9 @@ server <- function(input, output, session) {
         temp <- as_tibble(coef(m)$country, rownames = "country") %>%
             select(-`(Intercept)`) %>%
             mutate(
-              col = if_else(country == input$chosen_samanburdur, "blue", "grey"),
-              change = exp(days) - 1,
-              country = factor(reorder(country, change)),
+                col = if_else(country == input$chosen_samanburdur, "blue", "grey"),
+                change = exp(days) - 1,
+                country = factor(reorder(country, change)),
             )
         evo_chosen <- temp %>% filter(col == "blue") %>% pull(round(change, 3))
         mean_evo <- exp(fixef(m)[2]) - 1
@@ -299,18 +299,18 @@ server <- function(input, output, session) {
             labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) á völdu tímabili") +
             theme(axis.title = element_blank(), text = element_text(size = 12)) +
             background_grid(major = "none", minor = "none")
-            # Label Chosen
-            if (any(temp$col == "blue")) {
-              p <- p + 
-                  geom_text(
-                      data = tibble(),
-                      aes(label = percent(evo_chosen), x = input$chosen_samanburdur, y = evo_chosen + 0.02), 
-                      col = "blue", 
-                      size = 4
-                  )
-            }       
+        # Label Chosen
+        if (any(temp$col == "blue")) {
+            p <- p + 
+                geom_text(
+                    data = tibble(),
+                    aes(label = percent(evo_chosen), x = input$chosen_samanburdur, y = evo_chosen + 0.02), 
+                    col = "blue", 
+                    size = 4
+                )
+        }       
         if (nrow(temp) > 60) {
-          p <- p + theme(axis.text.y = element_text(size = 5))
+            p <- p + theme(axis.text.y = element_text(size = 5))
         }
         ggplotly(p, tooltip = c("x", "y", "country"))
     })
@@ -318,7 +318,7 @@ server <- function(input, output, session) {
     output$lmer_plot <- renderPlotly({
         lmer_plot()
     })
-
+    
     vikuleg_aukning <- reactive({
         # req() ?
         # input$gobutton_samanburdur
@@ -328,12 +328,12 @@ server <- function(input, output, session) {
             group_by(country) %>% 
             mutate(weekly_cases = as.integer(frollsum(new_cases, n = 7))) %>% 
             mutate(
-              weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases),
-              chosen = if_else(country == input$chosen_samanburdur, "comp", "rest")
+                weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases),
+                chosen = if_else(country == input$chosen_samanburdur, "comp", "rest")
             ) %>%
             ungroup()
     })
-
+    
     vikulegt_plot <- eventReactive(input$gobutton_samanburdur, {
         p <- vikuleg_aukning() %>%
             ggplot(
@@ -361,7 +361,7 @@ server <- function(input, output, session) {
                  y = "Nýgreind smit undanfarna viku")
         ggplotly(p)
     })
-
+    
     output$viku_plot <- renderPlotly({
         vikulegt_plot()
     })
@@ -440,10 +440,10 @@ server <- function(input, output, session) {
     out_gogn <- eventReactive(input$gobutton_forspa, {
         out <- d_spa %>% 
             filter(
-              type == input$tegund_forspa,
-              name == input$breyta_forspa,
-              date >= input$date_from_forspa,
-              date <= input$date_to_forspa
+                type == input$tegund_forspa,
+                name == input$breyta_forspa,
+                date >= input$date_from_forspa,
+                date <= input$date_to_forspa
             )
         if (input$byage_forspa == "Heild") {
             out <- out %>% 
@@ -451,8 +451,8 @@ server <- function(input, output, session) {
                 select(
                     -type, -age, -name,
                     Dagsetning = date, 
-                    "Líklegasta spá" = median, 
-                    "Svartsýn spá" = upper
+                    "Líklegri spá" = median, 
+                    "Svartsýnni spá" = upper
                 )
         } else {
             out <- out %>% 
@@ -461,8 +461,8 @@ server <- function(input, output, session) {
                     -name, -type,
                     Dagsetning = date, 
                     Aldur = age, 
-                    "Líklegasta spá" = median, 
-                    "Svartsýn spá" = upper
+                    "Líklegri spá" = median, 
+                    "Svartsýnni spá" = upper
                 )
         }
         out
@@ -486,5 +486,38 @@ server <- function(input, output, session) {
             rownames= FALSE,
             options = list(dom = 't', pageLength = nrow(out_gogn()))
         )
+    })
+    
+    myndrit <- eventReactive(input$gobutton_forspa, {
+        
+        p <- out_gogn() %>% 
+            ggplot(aes(Dagsetning, `Líklegri spá`)) +
+            geom_line() + 
+            geom_line(aes(y = `Svartsýnni spá`), lty = 2) +
+            theme(axis.title = element_blank())
+        
+        if (input$byage_forspa != "Heild") {
+            
+            p <- p + facet_wrap(~ Aldur, scales = "free_y")
+            
+        } else {
+            
+            plot_dat <- iceland_d %>% 
+                filter(
+                    type == input$tegund_forspa,
+                    name == input$breyta_forspa,
+                    date >= input$date_from_forspa,
+                    date <= input$date_to_forspa
+                ) 
+            
+            p <- p + geom_point(data = plot_dat, aes(x = date, y = value))
+        }
+        
+        p
+        
+    })
+    
+    output$myndrit <- renderPlot({
+        myndrit()
     })
 }
