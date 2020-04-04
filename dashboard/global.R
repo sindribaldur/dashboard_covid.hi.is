@@ -13,7 +13,7 @@ library(shiny)
 library(shinythemes)
 library(writexl)
 url.exists <- RCurl::url.exists
-library(glue)
+
 
 # Global settings ----
 theme_set(
@@ -57,15 +57,14 @@ iceland_d <- fread("https://docs.google.com/spreadsheets/d/1xgDhtejTtcyy6EN5dbDp
   pivot_longer(-date, names_pattern = "(.+)_(.+)", names_to = c("type", "name"))
 
 # Info in sidebar:
-sidebar_info <- glue(
+sidebar_info <-
     '<h6>Höfundar:</h6>
      <h6>Brynjófur Gauti Jónsson og Sindri Baldur Sævarsson</h6>
      <h6>Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands</h6>
      <div align="middle" class="center">
-         <img src="hi_hvs_horiz.png" width="80%"/>
+     <img src="hi_hvs_horiz.png" width="80%"/>
      </div>
      <h6>Byggt á daglega uppfærðum gögnum ECDC</h6>
      <a href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">Hlekkur á gögn</a>
      <h6>Síðast uppfært 1. apríl 2020 klukkan 19:06</h6>
      <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">Allan kóða má nálgast hér</a>'
-)
