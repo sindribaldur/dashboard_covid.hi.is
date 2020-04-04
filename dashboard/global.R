@@ -35,13 +35,14 @@ d_spa <- local({
     day <- today - 1
     url <- if (url.exists(url)) url else sub(today, day, url, fixed = TRUE)
     tointeger <- c("median", "upper")
-    fread(url, colClasses = c("Date", rep("character", 3), "numeric", "numeric", "character"))[,
+    fread(url, colClasses = c("Date", rep("character", 3), "numeric", "numeric", "character"), encoding = "UTF-8")[,
       (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
       .SDcols = tointeger]
-}) %>% 
+}) 
+
+d_spa <- setDF(d_spa) %>% 
   filter(aldursdreifing == "gögn") %>% 
   select(-aldursdreifing)
-setDF(d_spa)
 
 d <- fread(
     paste0(baseurl, "Input/ECDC_Data.csv"), 
