@@ -43,9 +43,14 @@ server <- function(input, output, session) {
     })
     
     throun_df <- reactive({
+        if (input$y_var == "total_cases") {
+            y_var_p = "case_rate"
+        } else {
+            y_var_p = "death_rate"
+        }
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
-            filtervar <- "total_cases"
+            filtervar <- input$y_var
             filtervalue <- input$filtervalue 
         } else { 
             filtervar <- "case_rate"
@@ -57,7 +62,9 @@ server <- function(input, output, session) {
                 continent %in% input$continent,
                 !!sym(filtervar) > filtervalue
             ) %>%
-            mutate(chosen = if_else(country == input$chosen, "comp", "rest"))
+            mutate(chosen = if_else(country == input$chosen, "comp", "rest"),
+                   y_var_n = !!sym(input$y_var),
+                   y_var_p = !!sym(y_var_p))
         if (input$x_var == "skyl") {
             # data.table::rowid() does same as group_by() + row_number()
             mutate(out, days = rowid(country))
@@ -68,13 +75,20 @@ server <- function(input, output, session) {
     
     # Fjöldi graf
     euro_plot_n <- eventReactive(input$gobutton1, {
+        
+        if (input$y_var == "total_cases") {
+            yvar <- "smitaðra"
+        } else {
+            yvar <- "dauðsfalla"
+        }
+        
         if (input$x_var == "skyl") {
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                        days, total_cases, 
+                        days, y_var_n, 
                         col = chosen, alpha = chosen, size = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n)
                     )
                 ) +
                 labs(
@@ -88,16 +102,16 @@ server <- function(input, output, session) {
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                        date, total_cases, 
+                        date, y_var_n, 
                         col = chosen, alpha = chosen, size = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", total_cases)
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n)
                     )
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
                 labs(
-                    title = "Þróun fjölda smitaðra",
+                    title = paste("Þróun fjölda", yvar),
                     subtitle = "Sýnd eftir dagsetningu",
-                    y = "Fjöldi smitaðra"
+                    y = paste("Fjöldi", yvar)
                 ) +
                 theme(axis.title.x = element_blank())
         }
@@ -121,36 +135,62 @@ server <- function(input, output, session) {
     
     # Tíðni graf
     euro_plot_p <- eventReactive(input$gobutton1, {
+        if (input$y_var == "total_cases") {
+            yvar <- "smitaðra"
+        } else {
+            yvar <- "dauðsfalla"
+        }
+        
+        
         if (input$x_var == "skyl") {
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                        days, case_rate,
+                        days, y_var_p,
                         col = chosen, alpha = chosen, size = chosen, group = country,
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(case_rate, 3))
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 5))
                     )
                 ) +
                 labs(
-                    title = "Þróun tíðni smitaðra",
-                    subtitle = "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
-                    x = "Dagar síðan skilyrði var náð",
-                    y = "Fjöldi smitaðra á hverja 1000 íbúa"
+                    title = ifelse(
+                        input$y_var == "total_cases", 
+                        "Þróun tíðni smitaðra",
+                        "Þróun dánartíðni"
+                    ),
+                    subtitle = ifelse(
+                        input$y_var == "total_cases",
+                        "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
+                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
+                    y = ifelse(input$y_var == "total_cases", 
+                               "Fjöldi smitaðra á hverja 1000 íbúa",
+                               "Dánartíðni per smit")
                 )
         } else {
             # Eftir dagsetningu
             p <- throun_df() %>%
                 ggplot(
                     aes(
-                        date, case_rate, 
+                        date, y_var_p, 
                         col = chosen, alpha = chosen, size = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(case_rate, 3))
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 5))
                     )
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
                 labs(
-                    title = "Þróun tíðni smitaðra",
-                    subtitle = "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
-                    y = "Fjöldi smitaðra á hverja 1000 íbúa"
+                    title = ifelse(
+                        input$y_var == "total_cases", 
+                        "Þróun tíðni smitaðra",
+                        "Þróun dánartíðni"
+                    ),
+                    subtitle = ifelse(
+                        input$y_var == "total_cases",
+                        "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
+                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"
+                    ),
+                    y = ifelse(input$y_var == "total_cases", 
+                               "Fjöldi smitaðra á hverja 1000 íbúa",
+                               "Dánartíðni per smit"
+                    )
                 ) +
                 theme(axis.title.x = element_blank())
         }
@@ -393,7 +433,8 @@ server <- function(input, output, session) {
         cols <- list(
             "Landi" = "country", 
             "Tilfellum" = "cases", 
-            "Tíðni" = "incidence", 
+            "Smitatíðni" = "incidence", 
+            "Dánartíðni" = "death_rate",
             "Fyrsta smiti" = "days"
         )
         out <- d %>% 
@@ -402,6 +443,7 @@ server <- function(input, output, session) {
             summarise(
                 cases = max(total_cases),
                 incidence = round(cases / max(pop) * 1000, 4),
+                death_rate = death_rate[which.max(date)],
                 days = as.integer(max(date) - min(date)),
                 first = min(date)
             ) %>% 
@@ -413,7 +455,7 @@ server <- function(input, output, session) {
             out <- out %>% 
                 arrange(desc(!!sym(cols[[input$sort_col]])))
         }
-        names(out) <- c("Land", "Tilfelli", "Tíðni (per 1000)", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
+        names(out) <- c("Land", "Tilfelli", "Tíðni (per 1000)", "Dánartíðni", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
         icel <- which(out$Land == input$chosen_table)
         out 
     })

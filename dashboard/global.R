@@ -49,7 +49,7 @@ d_spa <- setDF(d_spa) %>%
 
 d <- fread(
   paste0(baseurl, "Input/ECDC_Data.csv"), 
-  encoding = "UTF-8")[, date := as.Date(date)][, !c("region", "total_deaths", "new_deaths")]
+  encoding = "UTF-8")[, date := as.Date(date)][, !c("region", "new_deaths")]
 setDF(d)
 date_range <- range(d$date)
 

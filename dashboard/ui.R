@@ -27,6 +27,13 @@ ui <- navbarPage(
                     multiple = FALSE,
                     selected = "Dagsetningu"
                 ),
+                selectInput(
+                    inputId = "y_var",
+                    label = "Breyta",
+                    choices = c("Smit" = "total_cases", "Dauðsföll" = "total_deaths"),
+                    multiple = FALSE,
+                    selected = "Smit"
+                ),
                 fluidRow(
                     column(
                         6,
@@ -42,7 +49,7 @@ ui <- navbarPage(
                         6,
                         numericInput(
                             inputId = "filtervalue", label = "Er hærri en", 
-                            min = 0, max = 100, value = 50
+                            min = 0, max = 100, value = 0
                         )
                     )
                 ),
@@ -135,7 +142,7 @@ ui <- navbarPage(
                 uiOutput("countries_to_table"),
                 selectInput(
                     inputId = "sort_col", label = "Raða eftir",
-                    choices = c("Landi", "Tilfellum", "Tíðni", "Fyrsta smiti"), 
+                    choices = c("Landi", "Tilfellum", "Smitatíðni", "Dánartíðni", "Fyrsta smiti"), 
                     selected = "Landi"
                 ),
                 div(
