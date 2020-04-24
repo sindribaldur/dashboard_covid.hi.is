@@ -154,8 +154,8 @@ server <- function(input, output, session) {
                 labs(
                     title = ifelse(
                         input$y_var == "total_cases", 
-                        "Þróun tíðni smitaðra",
-                        "Þróun dánartíðni"
+                        "Þróun tíðni smitaðra (per 1000 íbúa)",
+                        "Þróun dánartíðni (hlutfall smitaðra sem látast)"
                     ),
                     subtitle = ifelse(
                         input$y_var == "total_cases",
@@ -163,7 +163,7 @@ server <- function(input, output, session) {
                         "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
                                "Fjöldi smitaðra á hverja 1000 íbúa",
-                               "Dánartíðni per smit")
+                               "Dánartíðni (hlutfall smitaðra sem hafa látist)")
                 )
         } else {
             # Eftir dagsetningu
@@ -179,18 +179,16 @@ server <- function(input, output, session) {
                 labs(
                     title = ifelse(
                         input$y_var == "total_cases", 
-                        "Þróun tíðni smitaðra",
-                        "Þróun dánartíðni"
+                        "Þróun tíðni smitaðra (per 1000 íbúa)",
+                        "Þróun dánartíðni (hlutfall smitaðra sem hafa látist)"
                     ),
                     subtitle = ifelse(
                         input$y_var == "total_cases",
                         "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
-                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"
-                    ),
+                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
                                "Fjöldi smitaðra á hverja 1000 íbúa",
-                               "Dánartíðni per smit"
-                    )
+                               "Dánartíðni (Fjöldi látinna / fjöldi smitaðra)")
                 ) +
                 theme(axis.title.x = element_blank())
         }
