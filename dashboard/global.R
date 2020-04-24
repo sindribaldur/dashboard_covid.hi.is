@@ -53,7 +53,8 @@ date_range <- range(d$date)
 iceland_d <- fread("https://docs.google.com/spreadsheets/d/1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA/export?format=csv&id=1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA&gid=1788393542") %>% 
     select(date = Dagsetning, cumulative_cases = Smit_Samtals, active_cases = Virk_Smit, 
          active_hospital = Inniliggjandi, active_icu = Gjorgaesla, cumulative_hospital = Spitali_Samtals, cumulative_icu = Gjorgaesla_Samtals) %>% 
-    pivot_longer(-date, names_pattern = "(.+)_(.+)", names_to = c("type", "name"))
+    pivot_longer(-date, names_pattern = "(.+)_(.+)", names_to = c("type", "name")) %>%
+    mutate(date = as.Date(date))
 
 # Info in sidebar:
 sidebar_info <-
