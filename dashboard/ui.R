@@ -132,17 +132,22 @@ ui <- navbarPage(
         sidebarLayout(
             sidebarPanel(
                 selectInput(
-                    inputId = "countries_table", 
-                    label = "Lönd", 
-                    choices = unique(d$country),
+                    inputId = "continent_table",
+                    label = "Heimsálfa",
+                    choices = unique(d$continent),
                     multiple = TRUE, 
                     selectize = TRUE,
-                    selected = c("Denmark", "Norway", "Finnland", "Sweden", "Iceland")
+                    selected = "Europe"
+                ),
+                uiOutput("countries_table"),
+                div(
+                    actionButton(inputId = "selectall_table", label = "Velja/Afvelja öll lönd"), 
+                    class = "center", align = "middle"
                 ),
                 uiOutput("countries_to_table"),
                 selectInput(
                     inputId = "sort_col", label = "Raða eftir",
-                    choices = c("Landi", "Tilfellum", "Smitatíðni", "Dánartíðni", "Fyrsta smiti"), 
+                    choices = c("Landi", "Tilfellum", "Smitatíðni", "Dauðsföll", "Dánartíðni", "Fyrsta smiti"), 
                     selected = "Landi"
                 ),
                 div(

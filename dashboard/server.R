@@ -407,25 +407,47 @@ server <- function(input, output, session) {
     })
     
     ##### Töfluyfirlit #####
+    
+    observe({
+        toselect <-
+            if (input$selectall_table %% 2 == 1) {
+                unique(d[d$continent %in% input$continent_table, "country"])
+            } else {
+                selected = nordic_countries
+            }
+        updateCheckboxGroupInput(
+            session = session,
+            inputId = "countries_table",
+            selected = toselect
+        )
+    })
+    
+    output$countries_table <- renderUI({
+        req(input$continent_table)
+        selected <- if ("Europe" %in% input$continent_table) nordic_countries
+        selectInput(
+            inputId = "countries_table",
+            label = "Lönd",
+            choices = unique(d[d$continent %in% input$continent, "country"]),
+            multiple = TRUE, 
+            selectize = TRUE,
+            selected = selected
+        )
+    })
+    
     output$countries_to_table <- renderUI({
-        req(input$countries)
-        if ("Iceland" %in% input$countries) {
-            selectInput(
-                inputId = "chosen_table", 
-                label = "Samanburðarland", 
-                choices = input$countries_table,
-                selectize = TRUE,
-                selected =  "Iceland"
-            )
-        } else {
-            selectInput(
-                inputId = "chosen_table", 
-                label = "Samanburðarland", 
-                choices = input$countries_table,
-                selectize = TRUE,
-                selected =  input$countries_table[1]
-            )
-        }
+        req(input$countries_table)
+        selectInput(
+            inputId = "chosen_table",
+            label = "Samanburðarland",
+            choices = input$countries_table,
+            selectize = TRUE,
+            selected = if ("Iceland" %in% input$countries_table) {
+                "Iceland"
+            }  else {
+                input$countries_table[1]
+            }
+        )
     })
     
     summary_table <- eventReactive(input$gobutton2, {
@@ -434,6 +456,7 @@ server <- function(input, output, session) {
             "Landi" = "country", 
             "Tilfellum" = "cases", 
             "Smitatíðni" = "incidence", 
+            "Dauðsföll" = "deaths",
             "Dánartíðni" = "death_rate",
             "Fyrsta smiti" = "days"
         )
@@ -443,7 +466,8 @@ server <- function(input, output, session) {
             summarise(
                 cases = max(total_cases),
                 incidence = round(cases / max(pop) * 1000, 4),
-                death_rate = death_rate[which.max(date)],
+                deaths = max(total_deaths),
+                death_rate = deaths / cases,
                 days = as.integer(max(date) - min(date)),
                 first = min(date)
             ) %>% 
@@ -455,7 +479,7 @@ server <- function(input, output, session) {
             out <- out %>% 
                 arrange(desc(!!sym(cols[[input$sort_col]])))
         }
-        names(out) <- c("Land", "Tilfelli", "Tíðni (per 1000)", "Dánartíðni", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
+        names(out) <- c("Land", "Tilfelli", "Smitatíðni (per 1000)", "Dauðsföll", "Dánartíðni", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
         icel <- which(out$Land == input$chosen_table)
         out 
     })
