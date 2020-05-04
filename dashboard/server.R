@@ -13,7 +13,6 @@ server <- function(input, output, session) {
             selected = toselect
         )
     })
-    
     output$countries <- renderUI({
         req(input$continent)
         selected <- if ("Europe" %in% input$continent) nordic_countries
@@ -45,8 +44,10 @@ server <- function(input, output, session) {
     throun_df <- reactive({
         if (input$y_var == "total_cases") {
             y_var_p = "case_rate"
+            y_var_n_daily = "new_cases"
         } else {
             y_var_p = "death_rate"
+            y_var_n_daily = "new_deaths"
         }
         req(input$countries, input$chosen)
         if (input$filtervar == "Fjöldi tilvika") {
@@ -59,12 +60,15 @@ server <- function(input, output, session) {
         out <- d %>%
             filter(
                 country %in% input$countries, 
-                continent %in% input$continent,
                 !!sym(filtervar) > filtervalue
             ) %>%
             mutate(chosen = if_else(country == input$chosen, "comp", "rest"),
                    y_var_n = !!sym(input$y_var),
-                   y_var_p = !!sym(y_var_p))
+                   y_var_n_daily = !!sym(y_var_n_daily),
+                   y_var_p = !!sym(y_var_p)) %>% 
+            group_by(country) %>% 
+            mutate(y_var_n_weekly = as.integer(frollsum(y_var_n_daily, n = 7))) %>% 
+            ungroup
         if (input$x_var == "skyl") {
             # data.table::rowid() does same as group_by() + row_number()
             mutate(out, days = rowid(country))
@@ -77,9 +81,9 @@ server <- function(input, output, session) {
     euro_plot_n <- eventReactive(input$gobutton1, {
         
         if (input$y_var == "total_cases") {
-            yvar <- "smitaðra"
+            yvar <- "greindra smita"
         } else {
-            yvar <- "dauðsfalla"
+            yvar <- "skráðra dauðsfalla"
         }
         
         if (input$x_var == "skyl") {
@@ -92,10 +96,10 @@ server <- function(input, output, session) {
                     )
                 ) +
                 labs(
-                    title = "Þróun fjölda smitaðra",
+                    title = "Þróun fjölda greindra smita",
                     subtitle = "Sýnd eftir dögum frá öðru smiti hvers lands",
                     x = "Dagar síðan skilyrði var náð",
-                    y = "Fjöldi smitaðra"
+                    y = "Fjöldi greindra smita"
                 )
         } else { 
             # Eftir dagsetningu
@@ -131,6 +135,65 @@ server <- function(input, output, session) {
     
     output$euro_plot_n <- renderPlotly({
         euro_plot_n()
+    })
+    
+    euro_plot_n_daily <- eventReactive(input$gobutton1, {
+        
+        if (input$y_var == "total_cases") {
+            yvar <- "nýgreindra smita undanfarna viku"
+        } else {
+            yvar <- "skráðra dauðsfalla undanfarna viku"
+        }
+        
+        if (input$x_var == "skyl") {
+            p <- throun_df() %>%
+                ggplot(
+                    aes(
+                        days, y_var_n_weekly, 
+                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
+                    )
+                ) +
+                labs(
+                    title = paste("Þróun fjölda", yvar),
+                    subtitle = "Sýnd eftir dagsetningu",
+                    x = "Fjöldi síðan skilyrði var náð",
+                    y = paste("Fjöldi", yvar)
+                )
+        } else { 
+            # Eftir dagsetningu
+            p <- throun_df() %>%
+                ggplot(
+                    aes(
+                        date, y_var_n_weekly, 
+                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
+                    )
+                ) +
+                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
+                labs(
+                    title = paste("Þróun fjölda", yvar),
+                    subtitle = "Sýnd eftir dagsetningu",
+                    y = paste("Fjöldi", yvar)
+                ) +
+                theme(axis.title.x = element_blank())
+        }
+        p <- p + 
+            geom_line(show.legend = FALSE) +
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
+            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) +
+            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+        p <- p +
+            if (input$scale == "Logra") {
+                scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
+            } else {
+                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F"))
+            }
+        ggplotly(p, tooltip = "text")
+    })
+    
+    output$euro_plot_n_daily <- renderPlotly({
+        euro_plot_n_daily()
     })
     
     # Tíðni graf

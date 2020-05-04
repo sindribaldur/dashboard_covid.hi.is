@@ -58,7 +58,7 @@ ui <- navbarPage(
                     label = "Kvarði",
                     choices = c("Upprunalegur", "Logra"),
                     multiple = FALSE, 
-                    selected = "Logra"
+                    selected = "Upprunalegur"
                 ),
                 div(
                     actionButton(inputId = "gobutton1", label = "Birta", width = "120px"), 
@@ -69,7 +69,10 @@ ui <- navbarPage(
             mainPanel(
                 tabsetPanel(
                     type = "tabs",
-                    tabPanel("Fjöldi", plotlyOutput("euro_plot_n", height = "600px")),
+                    tabPanel("Fjöldi", 
+                             plotlyOutput("euro_plot_n", height = "600px"),
+                             plotlyOutput("euro_plot_n_daily", height = "600px")
+                             ),
                     tabPanel("Tíðni", plotlyOutput("euro_plot_p", height = "600px"))
                 )
             )

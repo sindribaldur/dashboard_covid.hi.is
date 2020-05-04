@@ -23,8 +23,9 @@ theme_set(
 )
 
 # Constants ----
-sidast_uppfaert <- "Síðast uppfært 05. apríl 2020 klukkan 18:53"
-nordic_countries <- c("Denmark", "Norway", "Finland", "Sweden", "Iceland", "Faroe Islands")
+sidast_uppfaert <- "Síðast uppfært 04. maí 2020"
+# nordic_countries <- c("Denmark", "Norway", "Finland", "Sweden", "Iceland", "Faroe Islands")
+nordic_countries <- c("Iceland")
 
 # Load data ----
 baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
@@ -49,7 +50,7 @@ d_spa <- setDF(d_spa) %>%
 
 d <- fread(
   paste0(baseurl, "Input/ECDC_Data.csv"), 
-  encoding = "UTF-8")[, date := as.Date(date)][, !c("region", "new_deaths")]
+  encoding = "UTF-8")[, date := as.Date(date)][, !c("region")]
 setDF(d)
 date_range <- range(d$date)
 
