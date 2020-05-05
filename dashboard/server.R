@@ -420,6 +420,7 @@ server <- function(input, output, session) {
         lmer_plot()
     })
     
+    ##### Vikuleg Smit #####
     vikuleg_aukning <- reactive({
         # req() ?
         # input$gobutton_samanburdur
@@ -446,17 +447,21 @@ server <- function(input, output, session) {
             geom_abline(intercept = 0, slope = 1, lty = 2, size = 1,
                         col = "grey", alpha = 0.5) +
             geom_line() +
-            scale_x_log10(breaks = c(1, 3, 10, 30, 100, 300, 1000, 3000,
-                                     10000, 30000, 1e5, 3e5, 1e6),
+            scale_x_log10(breaks = c(1, 3, 10, 30, 
+                                     1e2, 3e2, 1e3, 3e3,
+                                     1e4, 3e4, 1e5, 3e5,
+                                     1e6, 3e6, 1e7),
                           labels = label_number(accuracy = 1, big.mark = "\U202F")) +
-            scale_y_log10(breaks = c(1, 3, 10, 30, 100, 300, 1000, 3000,
-                                     10000, 30000, 100000, 300000),
+            scale_y_log10(breaks = c(1, 3, 10, 30, 
+                                     1e2, 3e2, 1e3, 3e3,
+                                     1e4, 3e4, 1e5, 3e5,
+                                     1e6),
                           labels = label_number(accuracy = 1, big.mark = "\U202F")) +
             scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
             scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
             scale_alpha_manual(values = c(comp = 1, rest = 0.3)) +
-            coord_cartesian(xlim = c(1, 1e6),
-                            ylim = c(1, 1e5)) +
+            coord_cartesian(xlim = c(1, 1e7),
+                            ylim = c(1, 1e6)) +
             labs(title = "Vikuleg smit eftir löndum",
                  x = "Heildarfjöldi smita",
                  y = "Nýgreind smit undanfarna viku")
