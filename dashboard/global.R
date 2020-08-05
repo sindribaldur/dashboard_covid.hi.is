@@ -29,24 +29,6 @@ nordic_countries <- c("Iceland")
 
 # Load data ----
 baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
-d_spa <- local({
-  day <- Sys.Date()
-  url <- paste0(baseurl, "Output/Iceland_Predictions/Iceland_Predictions_", day, ".csv")
-  
-  # Ef ekki komin spá, leita aftur í tímann eftir síðustu spá.
-  while (!url.exists(url)) {
-    day <- day - 1
-    url <- paste0(baseurl, "Output/Iceland_Predictions/Iceland_Predictions_", day, ".csv")
-  }
-  tointeger <- c("median", "upper")
-  fread(url, colClasses = c("Date", rep("character", 3), rep("numeric", 3), "character"), encoding = "UTF-8")[,
-                                                                                                              (tointeger) := lapply(.SD, function(x) as.integer(round(x))),
-                                                                                                              .SDcols = tointeger]
-}) 
-
-d_spa <- setDF(d_spa) %>% 
-  filter(aldursdreifing == "gögn") %>% 
-  select(-aldursdreifing)
 
 d <- fread(
   paste0(baseurl, "Input/ECDC_Data.csv"), 
@@ -54,11 +36,6 @@ d <- fread(
 setDF(d)
 date_range <- range(d$date)
 
-iceland_d <- fread("https://docs.google.com/spreadsheets/d/1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA/export?format=csv&id=1xgDhtejTtcyy6EN5dbDp5W3TeJhKFRRgm6Xk0s0YFeA&gid=1788393542") %>% 
-  select(date = Dagsetning, cumulative_cases = Smit_Samtals, active_cases = Virk_Smit, 
-         active_hospital = Inniliggjandi, active_icu = Gjorgaesla, cumulative_hospital = Spitali_Samtals, cumulative_icu = Gjorgaesla_Samtals) %>% 
-  pivot_longer(-date, names_pattern = "(.+)_(.+)", names_to = c("type", "name")) %>%
-  mutate(date = as.Date(date))
 
 # Info in sidebar:
 sidebar_info <-
