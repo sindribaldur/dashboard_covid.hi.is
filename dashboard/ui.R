@@ -236,30 +236,5 @@ ui <- navbarPage(
                 )
             )
         )
-    ),
-    ##### Fróðleikur #####
-    tabPanel(
-        title = "Fróðleikur", 
-        sidebarLayout(
-            sidebarPanel(
-                h6("Höfundur:"),
-                h6("Brynjófur Gauti Jónsson,"),
-                h6("Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands"),
-                div(img(src = "hi_hvs_horiz.png", width = "80%"), align = "middle", class = "center"),
-                h6("Byggt á daglega uppfærðum gögnum ECDC sem fást í hlekk að neðan"),
-                a("Hlekkur á gögn", href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide"),
-                h6(sidast_uppfaert),
-                a("Allan kóða má nálgast hér", href = "https://github.com/bgautijonsson/covid19")  
-            ),
-            mainPanel(
-                tabsetPanel(
-                    type = "tabs", 
-                    tabPanel(
-                        "Lögmál smárra talna", 
-                        includeHTML("www/LawOfSmallNumbers.html")
-                    )
-                )
-            )
-        )
     ) 
 )
