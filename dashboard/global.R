@@ -22,8 +22,9 @@ theme_set(
     theme(legend.position = "none")
 )
 
+
 # Constants ----
-sidast_uppfaert <- "Síðast uppfært 04. maí 2020"
+sidast_uppfaert <- "Síðast uppfært 5. ágúst 2020"
 default_countries <- "Iceland"
 
 sidebar_info <-
@@ -40,12 +41,27 @@ sidebar_info <-
        <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">Allan kóða má nálgast hér</a>'
   )
 
+
 # Load data ----
-baseurl <- "https://raw.githubusercontent.com/bgautijonsson/covid19/master/"
-
-d <- fread(
-  paste0(baseurl, "Input/ECDC_Data.csv"), 
-  encoding = "UTF-8")[, date := as.Date(date)][, !c("region")]
-setDF(d)
+d <- local({
+  d <- fread("https://covid.ourworldindata.org/data/owid-covid-data.csv")
+  to_rename <- c(country = "location", pop = "population")
+  setnames(d, to_rename, names(to_rename))
+  # Keep only relevant columns
+  to_select <- c(
+    "continent", "country", "pop", "date", 
+    "new_cases", "new_deaths", "total_cases", "total_deaths"
+  ) 
+  d <- d[, ..to_select]
+  # Keep only relevant rows (actual countries) and at least one case
+  d <- d[continent != "" & total_cases > 0]
+  
+  d[, date := as.Date(date)] # can maybe skip this step?
+  to_integer <- c("pop", "new_cases", "new_deaths", "total_cases", "total_deaths")
+  d[, (to_integer) := lapply(.SD, as.integer), .SDcols = to_integer]
+  # Add case and death rate
+  d[, case_rate  := total_cases / pop * 1000]
+  d[, death_rate := fifelse(total_cases == 0, 0, total_deaths / total_cases)]
+  setDF(d)
+})
 date_range <- range(d$date)
-
