@@ -24,7 +24,7 @@ theme_set(
 
 
 # Constants ----
-sidast_uppfaert <- "Síðast uppfært 5. ágúst 2020"
+sidast_uppfaert <- "Síðast uppfært 12. ágúst 2020"
 default_countries <- "Iceland"
 
 sidebar_info <-
@@ -52,16 +52,15 @@ d <- local({
     "continent", "country", "pop", "date", 
     "new_cases", "new_deaths", "total_cases", "total_deaths"
   ) 
-  d <- d[, ..to_select]
+  d[, setdiff(names(d), to_select) := NULL]
   # Keep only relevant rows (actual countries) and at least one case
   d <- d[continent != "" & total_cases > 0]
-  
-  d[, date := as.Date(date)] # can maybe skip this step?
   to_integer <- c("pop", "new_cases", "new_deaths", "total_cases", "total_deaths")
   d[, (to_integer) := lapply(.SD, as.integer), .SDcols = to_integer]
   # Add case and death rate
   d[, case_rate  := total_cases / pop * 1000]
-  d[, death_rate := fifelse(total_cases == 0, 0, total_deaths / total_cases)]
+  d[, death_rate := fifelse(total_cases == 0L, 0, total_deaths / total_cases)]
+  # Convert to data.frame
   setDF(d)
 })
 date_range <- range(d$date)
