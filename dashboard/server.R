@@ -157,7 +157,7 @@ server <- function(input, output, session) {
                 labs(
                     title = paste("Þróun fjölda", yvar),
                     subtitle = "Sýnd eftir dagsetningu",
-                    x = "Fjöldi síðan skilyrði var náð",
+                    x = "Dagar síðan skilyrði var náð",
                     y = paste("Fjöldi", yvar)
                 )
         } else { 
@@ -226,7 +226,8 @@ server <- function(input, output, session) {
                         "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
                                "Fjöldi smitaðra á hverja 1000 íbúa",
-                               "Dánartíðni (hlutfall smitaðra sem hafa látist)")
+                               "Dánartíðni (hlutfall smitaðra sem hafa látist)"),
+                    x = "Dagar síðan skilyrði var náð"
                 )
         } else {
             # Eftir dagsetningu
@@ -251,7 +252,8 @@ server <- function(input, output, session) {
                         "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
                                "Fjöldi smitaðra á hverja 1000 íbúa",
-                               "Dánartíðni (Fjöldi látinna / fjöldi smitaðra)")
+                               "Dánartíðni (Fjöldi látinna / fjöldi smitaðra)"),
+                    x = "Dagar síðan skilyrði var náð"
                 ) +
                 theme(axis.title.x = element_blank())
         }
