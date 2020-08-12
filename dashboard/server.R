@@ -264,7 +264,7 @@ server <- function(input, output, session) {
             if (input$scale == "Logra") {
                 scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
             } else {
-                scale_y_continuous(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
+                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F", decimal.mark = ","))
             }
         ggplotly(p, tooltip = "text")
     })
