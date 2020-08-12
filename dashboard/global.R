@@ -57,6 +57,8 @@ d <- local({
   d <- d[continent != "" & total_cases > 0]
   to_integer <- c("pop", "new_cases", "new_deaths", "total_cases", "total_deaths")
   d[, (to_integer) := lapply(.SD, as.integer), .SDcols = to_integer]
+  # Idate fails in some context
+  d[, date := as.Date(date)]
   # Add case and death rate
   d[, case_rate  := total_cases / pop * 1000]
   d[, death_rate := fifelse(total_cases == 0L, 0, total_deaths / total_cases)]
