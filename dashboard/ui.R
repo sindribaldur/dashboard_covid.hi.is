@@ -40,7 +40,10 @@ ui <- navbarPage(
                         selectInput(
                             inputId = "filtervar",
                             label = "Sýna gögn þar sem",
-                            choices = c("Fjöldi tilvika", "Tíðni tilvika per milljón"),
+                            choices = c(
+                              "Fjöldi tilvika" = "ft",
+                              "Tíðni tilvika per milljón" = "ftpm"
+                            ),
                             multiple = FALSE,
                             selected = "Fjöldi tilvika"
                         )

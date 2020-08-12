@@ -50,10 +50,10 @@ server <- function(input, output, session) {
             y_var_n_daily = "new_deaths"
         }
         req(input$countries, input$chosen)
-        if (input$filtervar == "Fjöldi tilvika") {
+        if (input$filtervar == "ft") {
             filtervar <- input$y_var
             filtervalue <- input$filtervalue 
-        } else { 
+        } else if (input$filtervar == "ftpm") { 
             filtervar <- "case_rate"
             filtervalue <- input$filtervalue / 1000
         }
