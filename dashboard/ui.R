@@ -88,11 +88,19 @@ ui <- navbarPage(
             mainPanel(
                 tabsetPanel(
                     type = "tabs",
-                    tabPanel("Fjöldi", 
-                             plotlyOutput("euro_plot_n", height = "600px"),
-                             plotlyOutput("euro_plot_n_daily", height = "600px")
-                             ),
-                    tabPanel("Tíðni", plotlyOutput("euro_plot_p", height = "600px"))
+                    tabPanel(
+                        "Fjöldi", 
+                        plotlyOutput("euro_plot_n", height = "600px"),
+                        plotlyOutput("euro_plot_n_daily", height = "600px")
+                    ),
+                    tabPanel(
+                        "Tíðni", 
+                        plotlyOutput("euro_plot_p", height = "600px"),
+                        conditionalPanel(
+                            "input.y_var == 'total_cases'",
+                            plotlyOutput("euro_plot_p_biweekly", height = "600px")
+                        )
+                    )
                 )
             )
         )

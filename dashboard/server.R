@@ -70,7 +70,10 @@ server <- function(input, output, session) {
                    y_var_n_daily = !!sym(y_var_n_daily),
                    y_var_p = !!sym(y_var_p)) %>% 
             group_by(country) %>% 
-            mutate(y_var_n_weekly = as.integer(frollsum(y_var_n_daily, n = 7))) %>% 
+            mutate(
+                y_var_n_weekly = as.integer(frollsum(y_var_n_daily, n = 7)),
+                y_var_p_biweekly = as.integer(frollsum(y_var_n_daily, n = 14)) / max(pop) * 100000
+            ) %>% 
             ungroup
         if (input$x_var == "skyl") {
             # data.table::rowid() does same as group_by() + row_number()
@@ -278,6 +281,59 @@ server <- function(input, output, session) {
         euro_plot_p()
     })
     
+    euro_plot_p_biweekly <- eventReactive(input$gobutton1, {
+        # Only available for total cases.
+        if (input$x_var == "skyl") {
+            p <- throun_df() %>%
+                ggplot(
+                    aes(
+                        days, y_var_p_biweekly,
+                        col = chosen, alpha = chosen, size = chosen, group = country,
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
+                    )
+                ) +
+                labs(
+                    title = "Greind smit síðustu tvær vikurnar (per 100.000 íbúa)",
+                    y = "Fjöldi smitaðra á hverja 100.000 íbúa",
+                    x = NULL
+                )
+        } else {
+            # Eftir dagsetningu
+            p <- throun_df() %>%
+                ggplot(
+                    aes(
+                        date, y_var_p_biweekly, 
+                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
+                    )
+                ) +
+                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
+                labs(
+                    title = "Greind smit síðustu tvær vikurnar (per 100.000 íbúa)",
+                    y = "Fjöldi smitaðra á hverja 100.000 íbúa",
+                    x = NULL
+                ) +
+                theme(axis.title.x = element_blank())
+        }
+        p <- p +
+            geom_line(show.legend = FALSE) +
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
+            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
+            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+        p <- p +
+            if (input$scale == "Logra") {
+                scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
+            } else {
+                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F", decimal.mark = ","))
+            }
+        ggplotly(p, tooltip = "text")
+    })
+
+    output$euro_plot_p_biweekly <- renderPlotly({
+        euro_plot_p_biweekly()
+    })    
+
+
     ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
