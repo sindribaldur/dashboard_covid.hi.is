@@ -55,7 +55,7 @@ server <- function(input, output, session) {
             filtervalue <- input$filtervalue 
         } else if (input$filtervar == "ftpm") { 
             filtervar <- "case_rate"
-            filtervalue <- input$filtervalue / 1000
+            filtervalue <- input$filtervalue / 10
         } else if (input$filtervar == "dags") {
             filtervar <- "date"
             filtervalue <- input$filtervalue_dags
@@ -214,21 +214,21 @@ server <- function(input, output, session) {
                     aes(
                         days, y_var_p,
                         col = chosen, alpha = chosen, size = chosen, group = country,
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 5))
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
                     )
                 ) +
                 labs(
                     title = ifelse(
                         input$y_var == "total_cases", 
-                        "Þróun tíðni smitaðra (per 1000 íbúa)",
+                        "Þróun tíðni greindra smita (per 100.000 íbúa)",
                         "Þróun dánartíðni (hlutfall smitaðra sem látast)"
                     ),
                     subtitle = ifelse(
                         input$y_var == "total_cases",
-                        "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
+                        "Sýnd sem fjöldi á hverja 100.000 íbúa eftir dögum frá öðru smiti hvers lands",
                         "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
-                               "Fjöldi smitaðra á hverja 1000 íbúa",
+                               "Fjöldi smitaðra á hverja 100.000 íbúa",
                                "Dánartíðni (hlutfall smitaðra sem hafa látist)"),
                     x = "Dagar síðan skilyrði var náð"
                 )
@@ -239,22 +239,22 @@ server <- function(input, output, session) {
                     aes(
                         date, y_var_p, 
                         col = chosen, alpha = chosen, size = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 5))
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
                     )
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
                 labs(
                     title = ifelse(
                         input$y_var == "total_cases", 
-                        "Þróun tíðni smitaðra (per 1000 íbúa)",
+                        "Þróun tíðni greindra smita (per 100.000 íbúa)",
                         "Þróun dánartíðni (hlutfall smitaðra sem hafa látist)"
                     ),
                     subtitle = ifelse(
                         input$y_var == "total_cases",
-                        "Sýnd sem fjöldi á hverja 1000 íbúa eftir dögum frá öðru smiti hvers lands",
+                        "Sýnd sem fjöldi á hverja 100.000 íbúa eftir dögum frá öðru smiti hvers lands",
                         "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
                     y = ifelse(input$y_var == "total_cases", 
-                               "Fjöldi smitaðra á hverja 1000 íbúa",
+                               "Fjöldi smitaðra á hverja 100.000 íbúa",
                                "Dánartíðni (Fjöldi látinna / fjöldi smitaðra)"),
                     x = "Dagar síðan skilyrði var náð"
                 ) +
@@ -402,7 +402,7 @@ server <- function(input, output, session) {
             scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
             scale_colour_manual(values = c(blue = "blue", grey = "grey")) +
             coord_flip() +
-            labs(title = "Dagleg aukning á tíðni tilfella (per 1000 íbúa) á völdu tímabili") +
+            labs(title = "Dagleg aukning á tíðni tilfella á völdu tímabili") +
             theme(axis.title = element_blank(), text = element_text(size = 12)) +
             background_grid(major = "none", minor = "none")
         # Label Chosen

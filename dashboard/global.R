@@ -57,7 +57,7 @@ d <- local({
   # Idate fails in some context
   d[, date := as.Date(date)]
   # Add case and death rate
-  d[, case_rate  := total_cases / pop * 1000]
+  d[, case_rate  := total_cases / pop * 100000]
   d[, death_rate := fifelse(total_cases == 0L, 0, total_deaths / total_cases)]
   # Convert to data.frame
   setDF(d)
