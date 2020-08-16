@@ -42,19 +42,35 @@ ui <- navbarPage(
                             label = "Sýna gögn þar sem",
                             choices = c(
                               "Fjöldi tilvika" = "ft",
-                              "Tíðni tilvika per milljón" = "ftpm"
+                              "Tíðni smita per milljón" = "ftpm",
+                              "Dagsetning" = "dags"
                             ),
                             multiple = FALSE,
                             selected = "Fjöldi tilvika"
                         )
                     ),
-                    column(
-                        6,
-                        numericInput(
-                            inputId = "filtervalue", label = "Er hærri en", 
-                            min = 0, max = 100, value = 0
+                    conditionalPanel(
+                        "input.filtervar!='dags'",
+                        column(
+                            6,
+                            numericInput(
+                                inputId = "filtervalue", label = "Er hærri en", 
+                                min = 0, max = 100, value = 0
+                            )
                         )
-                    )
+                    ),
+                    conditionalPanel(
+                        "input.filtervar=='dags'",
+                        column(
+                            6,
+                            dateInput(
+                                inputId = "filtervalue_dags", label = "Er hærri en", 
+                                min = as.Date("2019-12-31"), # First observation
+                                value = "2020-02-29" # First case in Iceland
+                            )
+                        )                        
+                    )                    
+
                 ),
                 selectInput(
                     inputId = "scale",

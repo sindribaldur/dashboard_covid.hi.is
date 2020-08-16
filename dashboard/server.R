@@ -56,6 +56,9 @@ server <- function(input, output, session) {
         } else if (input$filtervar == "ftpm") { 
             filtervar <- "case_rate"
             filtervalue <- input$filtervalue / 1000
+        } else if (input$filtervar == "dags") {
+            filtervar <- "date"
+            filtervalue <- input$filtervalue_dags
         }
         out <- d %>%
             filter(
