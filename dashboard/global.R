@@ -2,8 +2,6 @@
 library(cowplot)
 library(data.table)
 library(dplyr)
-library(tidyr)
-library(DT)
 library(ggplot2)
 library(kableExtra)
 library(lme4)
@@ -12,7 +10,6 @@ library(scales)
 library(shiny)
 library(shinythemes)
 library(writexl)
-url.exists <- RCurl::url.exists
 
 
 # Global settings ----
