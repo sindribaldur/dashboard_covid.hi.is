@@ -59,6 +59,14 @@ d <- local({
   # Add case and death rate
   d[, case_rate  := total_cases / pop * 100000]
   d[, death_rate := fifelse(total_cases == 0L, 0, total_deaths / total_cases)]
+  # Calculate rolling sums
+  d[, 
+    `:=`(
+      cases_n_weekly = as.integer(frollsum(new_cases, n = 7)),
+      deaths_n_weekly = as.integer(frollsum(new_deaths, n = 7)),
+      cases_p_biweekly = as.integer(frollsum(new_cases, n = 14)) / max(pop) * 100000,
+      deaths_p_biweekly = NA_integer_ # Not used at the moment
+    ), by = country]
   # Convert to data.frame
   setDF(d)
 })

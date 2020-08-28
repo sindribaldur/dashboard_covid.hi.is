@@ -15,11 +15,11 @@ server <- function(input, output, session) {
     })
     output$countries <- renderUI({
         req(input$continent)
-        selected <- if ("Europe" %in% input$continent) default_countries
+        selected <- if ("Europe" %chin% input$continent) default_countries
         selectInput(
             inputId = "countries",
             label = "Lönd",
-            choices = unique(d[d$continent %in% input$continent, "country"]),
+            choices = unique(d[d$continent %chin% input$continent, "country"]),
             multiple = TRUE, 
             selectize = TRUE,
             selected = selected
@@ -45,9 +45,13 @@ server <- function(input, output, session) {
         if (input$y_var == "total_cases") {
             y_var_p = "case_rate"
             y_var_n_daily = "new_cases"
+            y_var_n_weekly = "cases_n_weekly"
+            y_var_p_biweekly = "cases_p_biweekly"
         } else {
             y_var_p = "death_rate"
             y_var_n_daily = "new_deaths"
+            y_var_n_weekly = "deaths_n_weekly"
+            y_var_p_biweekly = "deaths_p_biweekly"
         }
         req(input$countries, input$chosen)
         if (input$filtervar == "ft") {
@@ -62,25 +66,19 @@ server <- function(input, output, session) {
         }
         out <- d %>%
             filter(
-                country %in% input$countries, 
+                country %chin% input$countries, 
                 !!sym(filtervar) > filtervalue
             ) %>%
-            mutate(chosen = if_else(country == input$chosen, "comp", "rest"),
-                   y_var_n = !!sym(input$y_var),
-                   y_var_n_daily = !!sym(y_var_n_daily),
-                   y_var_p = !!sym(y_var_p)) %>% 
-            group_by(country) %>% 
             mutate(
-                y_var_n_weekly = as.integer(frollsum(y_var_n_daily, n = 7)),
-                y_var_p_biweekly = as.integer(frollsum(y_var_n_daily, n = 14)) / max(pop) * 100000
-            ) %>% 
-            ungroup
-        if (input$x_var == "skyl") {
-            # data.table::rowid() does same as group_by() + row_number()
-            mutate(out, days = rowid(country))
-        } else {
-            out
-        }
+              chosen = fifelse(country == input$chosen, "comp", "rest"),
+              y_var_n = !!sym(input$y_var),
+              y_var_n_daily = !!sym(y_var_n_daily),
+              y_var_p = !!sym(y_var_p),
+              y_var_n_weekly = !!sym(y_var_n_weekly),
+              y_var_p_biweekly = !!sym(y_var_p_biweekly)
+            )
+        # data.table::rowid() does same as group_by() + row_number()    
+        if (input$x_var == "skyl") mutate(out, days = rowid(country)) else out
     })
     
     # Fjöldi graf
@@ -489,10 +487,9 @@ server <- function(input, output, session) {
             #arrange(country, date) %>% 
             filter(continent %in% input$continent_samanburdur, total_cases > 0) %>%
             group_by(country) %>% 
-            mutate(weekly_cases = as.integer(frollsum(new_cases, n = 7))) %>% 
             mutate(
-                weekly_cases = if_else(is.na(weekly_cases), cumsum(new_cases), weekly_cases),
-                chosen = if_else(country == input$chosen_samanburdur, "comp", "rest")
+                weekly_cases = fifelse(is.na(cases_n_weekly), cumsum(new_cases), cases_n_weekly),
+                chosen = fifelse(country == input$chosen_samanburdur, "comp", "rest")
             ) %>%
             ungroup()
     })
