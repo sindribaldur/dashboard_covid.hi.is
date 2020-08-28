@@ -15,7 +15,7 @@ server <- function(input, output, session) {
     })
     output$countries <- renderUI({
         req(input$continent)
-        selected <- if ("Europe" %chin% input$continent) default_countries
+        selected <- if ("Evrópa" %chin% input$continent) default_countries
         selectInput(
             inputId = "countries",
             label = "Lönd",
@@ -33,8 +33,8 @@ server <- function(input, output, session) {
             label = "Samanburðarland",
             choices = input$countries,
             selectize = TRUE,
-            selected = if ("Iceland" %in% input$countries) {
-                "Iceland"
+            selected = if ("Ísland" %in% input$countries) {
+                "Ísland"
             }  else {
                 input$countries[1]
             }
@@ -335,7 +335,7 @@ server <- function(input, output, session) {
     ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
-        selected <- if ("Europe" %in% input$continent_samanburdur) "Iceland"
+        selected <- if ("Evrópa" %in% input$continent_samanburdur) "Ísland"
         selectInput(
             inputId = "chosen_samanburdur", 
             label = "Samanburðarland", 
@@ -548,7 +548,7 @@ server <- function(input, output, session) {
     
     output$countries_table <- renderUI({
         req(input$continent_table)
-        selected <- if ("Europe" %in% input$continent_table) default_countries
+        selected <- if ("Evrópa" %in% input$continent_table) default_countries
         selectInput(
             inputId = "countries_table",
             label = "Lönd",
@@ -566,8 +566,8 @@ server <- function(input, output, session) {
             label = "Samanburðarland",
             choices = input$countries_table,
             selectize = TRUE,
-            selected = if ("Iceland" %in% input$countries_table) {
-                "Iceland"
+            selected = if ("Ísland" %in% input$countries_table) {
+                "Ísland"
             }  else {
                 input$countries_table[1]
             }

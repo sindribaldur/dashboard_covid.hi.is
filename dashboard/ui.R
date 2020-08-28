@@ -12,7 +12,7 @@ ui <- navbarPage(
                     choices = unique(d$continent),
                     multiple = TRUE, 
                     selectize = TRUE,
-                    selected = "Europe"
+                    selected = "Evrópa"
                 ),
                 uiOutput("countries"),
                 div(
@@ -116,7 +116,7 @@ ui <- navbarPage(
                     choices = unique(d$continent),
                     multiple = TRUE, 
                     selectize = TRUE,
-                    selected = "Europe"
+                    selected = "Evrópa"
                 ),
                 uiOutput("countries_to_choose_samanburdur"),
                 conditionalPanel(
@@ -167,7 +167,7 @@ ui <- navbarPage(
                     choices = unique(d$continent),
                     multiple = TRUE, 
                     selectize = TRUE,
-                    selected = "Europe"
+                    selected = "Evrópa"
                 ),
                 uiOutput("countries_table"),
                 div(

@@ -22,7 +22,7 @@ theme_set(
 
 # Constants ----
 sidast_uppfaert <- "Síðast uppfært 12. ágúst 2020"
-default_countries <- "Iceland"
+default_countries <- "Ísland" # Has to be in Europe
 
 sidebar_info <-
   paste0(
@@ -67,6 +67,11 @@ d <- local({
       cases_p_biweekly = as.integer(frollsum(new_cases, n = 14)) / max(pop) * 100000,
       deaths_p_biweekly = NA_integer_ # Not used at the moment
     ), by = country]
+  # Country/continent names to Icelandic
+  count_tr <- fread("translation_tables/country_translation.csv", encoding = "UTF-8")
+  d[country %chin% count_tr$en, country := count_tr[.SD, on = .(en = country), is]]
+  conti_tr <- fread("translation_tables/cont_translation.csv", encoding = "UTF-8")
+  d[continent %chin% conti_tr$en, continent := conti_tr[.SD, on = .(en = continent), is]]
   # Convert to data.frame
   setDF(d)
 })
