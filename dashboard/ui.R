@@ -171,7 +171,7 @@ ui <- navbarPage(
                 ),
                 uiOutput("countries_table"),
                 div(
-                    actionButton(inputId = "selectall_table", label = "Velja/Afvelja öll lönd"), 
+                    actionButton(inputId = "selectall_table", label = "Velja/afvelja öll lönd"), 
                     class = "center", align = "middle"
                 ),
                 uiOutput("countries_to_table"),
