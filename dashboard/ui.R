@@ -16,7 +16,7 @@ ui <- navbarPage(
                 ),
                 uiOutput("countries"),
                 div(
-                    actionButton(inputId = "selectall", label = "Velja/Afvelja öll lönd"), 
+                    actionButton(inputId = "selectall", label = "Velja/afvelja öll lönd"), 
                     class = "center", align = "middle"
                 ),
                 uiOutput("countries_to_choose"),

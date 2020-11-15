@@ -21,21 +21,18 @@ theme_set(
 
 
 # Constants ----
-sidast_uppfaert <- "Gögnin eru uppfærð daglega"
 default_countries <- "Ísland" # Has to be in Europe
 
 sidebar_info <-
   paste0(
-    '<h6>Höfundar:</h6>
-       <h6>Brynjófur Gauti Jónsson og Sindri Baldur Sævarsson</h6>
+    '<h6>Höfundar: Brynjófur Gauti Jónsson og Sindri Baldur Sævarsson</h6>
        <h6>Tölfræðiráðgjöf Heilbrigðisvísindasviðs Háskóla Íslands</h6>
        <div align="middle" class="center">
        <img src="hi_hvs_horiz.png" width="80%"/>
        </div>
-       <h6>Byggt á daglega uppfærðum gögnum ECDC</h6>
-       <a href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">Hlekkur á gögn</a>
-       <h6>', sidast_uppfaert, '</h6>
-       <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">Allan kóða má nálgast hér</a>'
+       <h6>Byggt á daglega uppfærðum 
+       <a href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">gögnum ECDC.</a>
+       Allan kóða má nálgast <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">hér.</a></h6>'
   )
 
 

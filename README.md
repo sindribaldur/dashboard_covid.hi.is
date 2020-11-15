@@ -1,6 +1,6 @@
 Hér eru skrár og kóði á bak við vefappið á [http://covid.rhi.hi.is/shiny/dashboard/](http://covid.rhi.hi.is/shiny/dashboard/).
 
-Annar kóði tengdur Covid-19 verkefni Heilbrigðisvísindastofnunar Háskóla Íslands er að finna [hér](https://github.com/bgautijonsson/covid19).
+Annan kóða tengdan COVID-19 verkefni Heilbrigðisvísindastofnunar Háskóla Íslands er að finna [hér](https://github.com/bgautijonsson/covid19).
 
 
 
