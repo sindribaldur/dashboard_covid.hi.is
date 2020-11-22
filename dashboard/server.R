@@ -5,7 +5,7 @@ server <- function(input, output, session) {
             if (input$selectall %% 2 == 1) {
                 get_count_per_cont(input$continent)
             } else {
-                selected = default_countries
+                default_countries
             }
         updateCheckboxGroupInput(
             session = session,
@@ -95,7 +95,8 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         days, y_var_n, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        col = chosen,
+                        group = country, 
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n)
                     )
                 ) +
@@ -111,8 +112,9 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         date, y_var_n, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n)
+                        col = chosen,
+                        group = country, 
+                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n),
                     )
                 ) +
                 scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
@@ -125,9 +127,7 @@ server <- function(input, output, session) {
         }
         p <- p + 
             geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
-            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) +
-            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
         p <- p +
             if (input$scale == "Logra") {
                 scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
@@ -154,7 +154,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         days, y_var_n_weekly, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        col = chosen, group = country, 
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
                     )
                 ) +
@@ -170,7 +170,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         date, y_var_n_weekly, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        col = chosen, group = country, 
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
                     )
                 ) +
@@ -184,9 +184,7 @@ server <- function(input, output, session) {
         }
         p <- p + 
             geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
-            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) +
-            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
         p <- p +
             if (input$scale == "Logra") {
                 scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
@@ -214,7 +212,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         days, y_var_p,
-                        col = chosen, alpha = chosen, size = chosen, group = country,
+                        col = chosen, group = country,
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
                     )
                 ) +
@@ -239,7 +237,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         date, y_var_p, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        col = chosen, group = country, 
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
                     )
                 ) +
@@ -263,9 +261,7 @@ server <- function(input, output, session) {
         }
         p <- p +
             geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
-            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
-            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
         p <- p +
             if (input$scale == "Logra") {
                 scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
@@ -286,7 +282,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         days, y_var_p_biweekly,
-                        col = chosen, alpha = chosen, size = chosen, group = country,
+                        col = chosen, group = country,
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
                     )
                 ) +
@@ -301,7 +297,7 @@ server <- function(input, output, session) {
                 ggplot(
                     aes(
                         date, y_var_p_biweekly, 
-                        col = chosen, alpha = chosen, size = chosen, group = country, 
+                        col = chosen, group = country, 
                         text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
                     )
                 ) +
@@ -315,9 +311,7 @@ server <- function(input, output, session) {
         }
         p <- p +
             geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
-            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
-            scale_alpha_manual(values = c(comp = 1, rest = 0.3))
+            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
         p <- p +
             if (input$scale == "Logra") {
                 scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
@@ -496,7 +490,7 @@ server <- function(input, output, session) {
             ggplot(
                 aes(
                     total_cases, weekly_cases, 
-                    group = country, col = chosen, size = chosen, alpha = chosen
+                    group = country, alpha = chosen
                 )
             ) +
             geom_abline(intercept = 0, slope = 1, lty = 2, size = 1,
@@ -513,8 +507,6 @@ server <- function(input, output, session) {
                                      1e6),
                           labels = label_number(accuracy = 1, big.mark = "\U202F")) +
             scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
-            scale_size_manual(values = c(comp = 1.2, rest = 0.8)) + 
-            scale_alpha_manual(values = c(comp = 1, rest = 0.3)) +
             coord_cartesian(xlim = c(1, 1e7),
                             ylim = c(1, 1e6)) +
             labs(title = "Vikuleg smit eftir löndum",
