@@ -175,11 +175,6 @@ ui <- navbarPage(
                     class = "center", align = "middle"
                 ),
                 uiOutput("countries_to_table"),
-                selectInput(
-                    inputId = "sort_col", label = "Raða eftir",
-                    choices = c("Landi", "Tilfellum", "Smitatíðni", "Dauðsföll", "Dánartíðni", "Fyrsta smiti"), 
-                    selected = "Landi"
-                ),
                 div(
                     actionButton(inputId = "gobutton2", label = "Birta", width = "120px"), 
                     class = "center", align = "middle"
@@ -187,11 +182,7 @@ ui <- navbarPage(
                 HTML(sidebar_info)
             ),
             mainPanel(
-                tableOutput("summary_table"),
-                conditionalPanel(
-                    condition = "input.gobutton2>0",
-                    downloadButton(outputId = "table_download", label = "Sækja gögn")
-                )
+                dataTableOutput("summary_table")
             )
         )
     )

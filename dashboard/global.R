@@ -3,7 +3,7 @@ library(cowplot)
 library(data.table)
 library(dplyr)
 library(ggplot2)
-library(kableExtra)
+library(DT)
 library(lme4)
 library(plotly)
 library(scales)
@@ -18,6 +18,7 @@ theme_set(
     background_grid(color.major = "grey90", color.minor = "grey95", minor = "xy", major = "xy") +
     theme(legend.position = "none")
 )
+options(OutDec = ",") # For DT
 
 
 # Constants ----
@@ -38,4 +39,16 @@ sidebar_info <-
 
 # Load data ----
 d <- readRDS("./data/data.rds")
+
+
 date_range <- c(min(d$date), max(d$date)) # Faster than range()
+count_cont_vec <- d %>% 
+  select(continent, country) %>% 
+  unique() %>% 
+  {setNames(.$continent, .$country)} 
+
+
+# Functions -----
+get_count_per_cont <- function(cont) {
+   names(count_cont_vec)[count_cont_vec %chin% cont]
+}

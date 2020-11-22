@@ -531,29 +531,26 @@ server <- function(input, output, session) {
     })
     
     ##### Töfluyfirlit #####
-    
     observe({
-        toselect <-
-            if (input$selectall_table %% 2 == 1) {
-                unique(d[d$continent %in% input$continent_table, "country"])
-            } else {
-                selected = default_countries
-            }
         updateCheckboxGroupInput(
             session = session,
             inputId = "countries_table",
-            selected = toselect
+            selected = if (input$selectall_table %% 2L == 1L) {
+                get_count_per_cont(input$continent_table)
+            } else {
+                default_countries
+            }
         )
     })
-    
+
     output$countries_table <- renderUI({
         req(input$continent_table)
         selected <- if ("Evrópa" %in% input$continent_table) default_countries
         selectInput(
             inputId = "countries_table",
             label = "Lönd",
-            choices = unique(d[d$continent %in% input$continent, "country"]),
-            multiple = TRUE, 
+            choices = get_count_per_cont(input$continent_table),
+            multiple = TRUE,
             selectize = TRUE,
             selected = selected
         )
@@ -575,54 +572,49 @@ server <- function(input, output, session) {
     })
     
     summary_table <- eventReactive(input$gobutton2, {
-        req(input$sort_col)
-        cols <- list(
-            "Landi" = "country", 
-            "Tilfellum" = "cases", 
-            "Smitatíðni" = "incidence", 
-            "Dauðsföll" = "deaths",
-            "Dánartíðni" = "death_rate",
-            "Fyrsta smiti" = "days"
-        )
-        out <- d %>% 
+        d %>% 
             filter(country %in% input$countries_table) %>% 
             group_by(country) %>%
             summarise(
                 cases = max(total_cases),
                 incidence = round(cases / max(pop) * 1000, 4),
-                deaths = max(total_deaths),
+                deaths = if (any(!is.na(total_deaths))) max(total_deaths, na.rm = TRUE) else 0,
                 death_rate = deaths / cases,
-                days = as.integer(max(date) - min(date)),
-                first = min(date)
-            ) %>% 
-            arrange(desc(!!sym(cols[[input$sort_col]])))
-        if (input$sort_col == "Landi") {
-            out <- out %>% 
-                arrange(!!sym(cols[[input$sort_col]]))
-        } else {
-            out <- out %>% 
-                arrange(desc(!!sym(cols[[input$sort_col]])))
-        }
-        names(out) <- c("Land", "Tilfelli", "Smitatíðni (per 1000)", "Dauðsföll", "Dánartíðni", "Dagar frá fyrsta smiti", "Dagsetning fyrsta smits")
-        icel <- which(out$Land == input$chosen_table)
-        out 
+                incidence_death = deaths / max(pop) * 100000,
+                first = min(date),
+                .groups = "drop",
+            ) %>%
+            setNames(
+              c(
+                "Land", "Tilfelli", "Smitatíðni (per 1000)", "Dauðsföll", 
+                "Dánartíðni (per smit)", "Dánartíðni (per 100.000)", "Dagsetning fyrsta smits"
+              )
+            )
     })
     
-    output$summary_table <- function() {
-        out <- summary_table()
-        icel <- which(out$Land == input$chosen_table)
-        out %>% 
-            kable(format = "html", align = c("l", rep("c", ncol(.) - 1))) %>% 
-            kable_styling(bootstrap_options = c("striped", "hover")) %>% 
-            row_spec(icel, bold = TRUE, background = "#b3cde3")
-    }
-    
-    output$table_download <- downloadHandler(
-        filename = function() {
-            paste0("tafla_", Sys.Date(), ".xlsx")
-        },
-        content = function(file) {
-            write_xlsx(summary_table(), file)
-        }
-    )
+    output$summary_table <- renderDataTable({
+        req(input$chosen_table)
+        datatable(
+            summary_table(),
+            extensions = 'Buttons',
+            rownames= FALSE,
+            options = list(
+                dom = 'Bfrtip',
+                buttons = c('csv', 'excel', 'pdf'),
+                pageLength = 120,
+                lengthChange = FALSE,
+                language = list(
+                  decimal = ",", thousands = ".", 
+                  url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Icelandic.json'
+                )
+            )
+        ) %>%
+            formatPercentage("Dánartíðni (per smit)", 2) %>%
+            formatRound(c("Smitatíðni (per 1000)", "Dánartíðni (per 100.000)"), digits = 1) %>%
+            formatRound(c("Dauðsföll", "Tilfelli"), digits = 0, mark = ".") %>%
+            formatStyle(
+              target = 'row', columns = 'Land',  
+              backgroundColor = styleEqual(input$chosen_table, c("#b3cde3"))
+            )
+    })
 }
