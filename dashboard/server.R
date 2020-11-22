@@ -3,7 +3,7 @@ server <- function(input, output, session) {
     observe({
         toselect <-
             if (input$selectall %% 2 == 1) {
-                unique(d[d$continent %in% input$continent, "country"])
+                get_count_per_cont(input$continent)
             } else {
                 selected = default_countries
             }
@@ -19,7 +19,7 @@ server <- function(input, output, session) {
         selectInput(
             inputId = "countries",
             label = "Lönd",
-            choices = unique(d[d$continent %chin% input$continent, "country"]),
+            choices = get_count_per_cont(input$continent),
             multiple = TRUE, 
             selectize = TRUE,
             selected = selected
@@ -339,10 +339,7 @@ server <- function(input, output, session) {
         selectInput(
             inputId = "chosen_samanburdur", 
             label = "Samanburðarland", 
-            choices = d %>% 
-                filter(continent %in% input$continent_samanburdur) %>% 
-                pull(country) %>% 
-                unique(),
+            choices = get_count_per_cont(input$continent_samanburdur),
             selectize = TRUE,
             selected = selected
         )
