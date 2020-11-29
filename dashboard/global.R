@@ -9,7 +9,6 @@ library(plotly)
 library(scales)
 library(shiny)
 library(shinythemes)
-library(writexl)
 
 
 # Global settings ----
@@ -38,15 +37,7 @@ sidebar_info <-
 
 
 # Load data ----
-d <- readRDS("./data/data.rds")
-
-
-date_range <- c(min(d$date), max(d$date)) # Faster than range()
-count_cont_vec <- d %>% 
-  select(continent, country) %>% 
-  unique() %>% 
-  {setNames(.$continent, .$country)} 
-
+load("./data/data.rdata")
 
 # Functions -----
 get_count_per_cont <- function(cont) {
