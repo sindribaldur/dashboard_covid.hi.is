@@ -26,6 +26,7 @@ to_integer <- c("pop", "new_cases", "new_deaths")
 d[, (to_integer) := lapply(.SD, as.integer), .SDcols = to_integer]
 
 # All countries should start at the same point
+d[, date := as.Date(date)]
 start <- min(d$date)
 d <- d[d[, .(date = seq.Date(from = start, to = max(date), by = 1L)), by = country], 
        on = .(country, date)]
@@ -50,6 +51,7 @@ d[,
     cases_p_biweekly = as.integer(frollsum(new_cases, n = 14)) / pop * 100000,
     deaths_p_biweekly = NA_integer_ # Not used at the moment
   ), by = country]
+
 # Country/continent names to Icelandic
 count_tr <- fread("../translation_tables/country_translation.csv", encoding = "UTF-8")
 d[country %chin% count_tr$en, country := count_tr[.SD, on = .(en = country), is]]
@@ -59,7 +61,7 @@ d[continent %chin% conti_tr$en, continent := conti_tr[.SD, on = .(en = continent
 
 # Helper objects ----
 date_range <- c(min(d$date), max(d$date)) # Faster than range()
-count_cont_vec <- x <- d[, unique(.SD), .SDcols = c("continent", "country")
+count_cont_vec <- d[, unique(.SD), .SDcols = c("continent", "country")
   ][, setNames(continent, country)]
 
 
