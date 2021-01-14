@@ -1,11 +1,11 @@
 # Packages ----
 library(data.table)
 setDTthreads(0L)
-library(fst)
 
-# Download data ----
+# Import data ----
 d <- fread("https://covid.ourworldindata.org/data/owid-covid-data.csv")
-
+count_tr <- fread("../translation_tables/country_translation.csv", encoding = "UTF-8")
+conti_tr <- fread("../translation_tables/cont_translation.csv", encoding = "UTF-8")
 
 # Prepare data ----
 
@@ -53,9 +53,7 @@ d[,
   ), by = country]
 
 # Country/continent names to Icelandic
-count_tr <- fread("../translation_tables/country_translation.csv", encoding = "UTF-8")
 d[country %chin% count_tr$en, country := count_tr[.SD, on = .(en = country), is]]
-conti_tr <- fread("../translation_tables/cont_translation.csv", encoding = "UTF-8")
 d[continent %chin% conti_tr$en, continent := conti_tr[.SD, on = .(en = continent), is]]
 
 
@@ -66,6 +64,4 @@ count_cont_vec <- d[, unique(.SD), .SDcols = c("continent", "country")
 
 
 # Export data ----
-
-# Convert to data.frame
 save(d, date_range, count_cont_vec, file = "data.rdata", compress = FALSE)
