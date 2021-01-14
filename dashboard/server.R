@@ -349,9 +349,9 @@ server <- function(input, output, session) {
                     dateInput(
                         "date_from_samanburdur", 
                         label = "Frá",
-                        value = "2020-03-04", 
+                        value = date_range[2] - 31L, 
                         min = date_range[1], 
-                        max = date_range[2] - 3
+                        max = date_range[2] - 2L
                     )
                 ),
                 column(
@@ -562,7 +562,7 @@ server <- function(input, output, session) {
     
     summary_table <- eventReactive(input$gobutton2, {
         d %>% 
-            filter(country %in% input$countries_table) %>% 
+            filter(country %chin% input$countries_table) %>% 
             group_by(country) %>%
             summarise(
                 cases = max(total_cases),
@@ -570,7 +570,7 @@ server <- function(input, output, session) {
                 deaths = if (any(!is.na(total_deaths))) max(total_deaths, na.rm = TRUE) else 0,
                 death_rate = deaths / cases,
                 incidence_death = deaths / max(pop) * 100000,
-                first = min(date),
+                first = date[which.max(total_cases != 0)],
                 .groups = "drop",
             ) %>%
             setNames(
