@@ -38,6 +38,7 @@ sidebar_info <-
 
 # Load data ----
 load("./data/data.rdata")
+setkey(d, country)
 
 # Functions -----
 get_count_per_cont <- function(cont) {

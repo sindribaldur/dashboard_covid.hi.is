@@ -9,7 +9,7 @@ ui <- navbarPage(
                 selectInput(
                     inputId = "continent",
                     label = "Heimsálfa",
-                    choices = unique(d$continent),
+                    choices = unique(count_cont_vec),
                     multiple = TRUE, 
                     selectize = TRUE,
                     selected = "Evrópa"
@@ -113,7 +113,7 @@ ui <- navbarPage(
                 selectInput(
                     inputId = "continent_samanburdur",
                     label = "Heimsálfa",
-                    choices = unique(d$continent),
+                    choices = unique(count_cont_vec),
                     multiple = TRUE, 
                     selectize = TRUE,
                     selected = "Evrópa"
@@ -164,7 +164,7 @@ ui <- navbarPage(
                 selectInput(
                     inputId = "continent_table",
                     label = "Heimsálfa",
-                    choices = unique(d$continent),
+                    choices = unique(count_cont_vec),
                     multiple = TRUE, 
                     selectize = TRUE,
                     selected = "Evrópa"

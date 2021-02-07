@@ -325,13 +325,12 @@ server <- function(input, output, session) {
     ##### Aukning LMER #####
     output$countries_to_choose_samanburdur <- renderUI({
         req(input$continent_samanburdur)
-        selected <- if ("Evrópa" %in% input$continent_samanburdur) "Ísland"
         selectInput(
             inputId = "chosen_samanburdur", 
             label = "Samanburðarland", 
             choices = get_count_per_cont(input$continent_samanburdur),
             selectize = TRUE,
-            selected = selected
+            selected = if ("Evrópa" %in% input$continent_samanburdur) "Ísland"
         )
     })
     
@@ -389,7 +388,7 @@ server <- function(input, output, session) {
     lmer_plot <- eventReactive(input$gobutton_samanburdur, {
         req(input$continent_samanburdur)
         d <- d %>% 
-            filter(continent %in% input$continent_samanburdur) %>%
+            filter(country %chin% get_count_per_cont(input$continent_samanburdur)) %>%
             mutate(days = as.integer(date - min(date)))
         if (input$tegund_samanburdur == "dags") {
             d <- d %>% 
@@ -557,24 +556,17 @@ server <- function(input, output, session) {
     })
     
     summary_table <- eventReactive(input$gobutton2, {
-        d %>% 
-            filter(country %chin% input$countries_table) %>% 
-            group_by(country) %>%
-            summarise(
-                cases = max(total_cases),
-                incidence = round(cases / max(pop) * 1000, 4),
-                deaths = if (any(!is.na(total_deaths))) max(total_deaths, na.rm = TRUE) else 0,
-                death_rate = deaths / cases,
-                incidence_death = deaths / max(pop) * 100000,
-                first = date[which.max(total_cases != 0)],
-                .groups = "drop",
-            ) %>%
-            setNames(
-              c(
-                "Land", "Tilfelli", "Smitatíðni (per 1000)", "Dauðsföll", 
-                "Dánartíðni (per smit)", "Dánartíðni (per 100.000)", "Dagsetning fyrsta smits"
-              )
-            )
+      d[country %chin% input$countries_table, .SD[.N], country
+        ][, .(Land = country,
+              Fólksfjöldi = count_pop[country],
+              Tilfelli = total_cases, 
+              `Smitatíðni` = total_cases / count_pop[country],
+              Dauðsföll = total_deaths,
+              `Dánartíðni (per smit)` = total_deaths/total_cases,
+              `Dánartíðni (per 100.000)` = total_deaths / count_pop[country] * 100000,
+              `Bólusetningar` = total_vaccines,
+              `Bólusetningatíðni` = total_vaccines / count_pop[country]
+            )]
     })
     
     output$summary_table <- renderDataTable({
@@ -594,9 +586,8 @@ server <- function(input, output, session) {
                 )
             )
         ) %>%
-            formatPercentage("Dánartíðni (per smit)", 2) %>%
-            formatRound(c("Smitatíðni (per 1000)", "Dánartíðni (per 100.000)"), digits = 1) %>%
-            formatRound(c("Dauðsföll", "Tilfelli"), digits = 0, mark = ".") %>%
+            formatPercentage(c("Smitatíðni", "Dánartíðni (per smit)", "Bólusetningatíðni"), 2) %>%
+            formatRound(c("Dánartíðni (per 100.000)"), digits = 2) %>%
             formatStyle(
               target = 'row', columns = 'Land',  
               backgroundColor = styleEqual(input$chosen_table, c("#b3cde3"))

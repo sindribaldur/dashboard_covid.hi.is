@@ -3,18 +3,20 @@ library(data.table)
 setDTthreads(0L)
 
 # Import data ----
+# the complete Our World in Data COVID-19 dataset
 d <- fread("https://covid.ourworldindata.org/data/owid-covid-data.csv")
 count_tr <- fread("../translation_tables/country_translation.csv", encoding = "UTF-8")
 conti_tr <- fread("../translation_tables/cont_translation.csv", encoding = "UTF-8")
 
 # Prepare data ----
 
-to_rename <- c(country = "location", pop = "population")
+to_rename <- c(country = "location", pop = "population", total_vaccines = "people_fully_vaccinated")
 setnames(d, to_rename, names(to_rename))
 
 # Keep only relevant columns
 to_select <- c(
-  "continent", "country", "pop", "date", "new_cases", "new_deaths"
+  "continent", "country", "pop", "date", "new_cases", "new_deaths", 
+  "total_vaccines"
 )
 d[, setdiff(names(d), to_select) := NULL]
 
@@ -22,7 +24,7 @@ d[, setdiff(names(d), to_select) := NULL]
 d <- d[continent != ""]
 
 # Integer columns as integers
-to_integer <- c("pop", "new_cases", "new_deaths")
+to_integer <- c("pop", "new_cases", "new_deaths", "total_vaccines")
 d[, (to_integer) := lapply(.SD, as.integer), .SDcols = to_integer]
 
 # All countries should start at the same point
@@ -35,6 +37,12 @@ d[, pop := last(pop) , by = country]
 d[, continent := last(continent), by = country]
 d[is.na(new_cases), new_cases := 0L]
 d[is.na(new_deaths), new_deaths := 0L]
+# For vaccine, data is sparse,
+# We can safely fill first obs with 0, and then use LOCF
+d[d[, .I[1L], by = country]$V1, total_vaccines := 0L]
+d[, 
+  total_vaccines := nafill(total_vaccines, "locf"),
+  by = country]
 
 # Add total 
 d[, total_cases := cumsum(new_cases), by = country]
@@ -61,7 +69,11 @@ d[continent %chin% conti_tr$en, continent := conti_tr[.SD, on = .(en = continent
 date_range <- c(min(d$date), max(d$date)) # Faster than range()
 count_cont_vec <- d[, unique(.SD), .SDcols = c("continent", "country")
   ][, setNames(continent, country)]
+count_pop <- d[, max(pop), by = country][, setNames(V1, country)]
 
+# Remove columns not used directly by app
+d[, c("continent", "pop") := NULL]
 
 # Export data ----
+setorder(d, country, date)
 save(d, date_range, count_cont_vec, file = "data.rdata", compress = FALSE)
