@@ -1,31 +1,27 @@
 server <- function(input, output, session) {
-    ##### Smitafjöldi #####
+    # Þróun ----
     observe({
-        toselect <-
-            if (input$selectall %% 2 == 1) {
+        updateCheckboxGroupInput(
+            session = session,
+            inputId = "countries",
+            selected = if (input$selectall %% 2L == 1L) {
                 get_count_per_cont(input$continent)
             } else {
                 default_countries
             }
-        updateCheckboxGroupInput(
-            session = session,
-            inputId = "countries",
-            selected = toselect
         )
     })
     output$countries <- renderUI({
         req(input$continent)
-        selected <- if ("Evrópa" %chin% input$continent) default_countries
         selectInput(
             inputId = "countries",
             label = "Lönd",
             choices = get_count_per_cont(input$continent),
             multiple = TRUE, 
             selectize = TRUE,
-            selected = selected
+            selected = if ("Evrópa" %chin% input$continent) default_countries
         )
     })
-    
     output$countries_to_choose <- renderUI({
         req(input$countries)
         selectInput(
@@ -33,7 +29,7 @@ server <- function(input, output, session) {
             label = "Samanburðarland",
             choices = input$countries,
             selectize = TRUE,
-            selected = if ("Ísland" %in% input$countries) {
+            selected = if ("Ísland" %chin% input$countries) {
                 "Ísland"
             }  else {
                 input$countries[1]
