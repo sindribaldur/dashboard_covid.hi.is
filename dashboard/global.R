@@ -30,8 +30,8 @@ sidebar_info <-
        <div align="middle" class="center">
        <img src="hi_hvs_horiz.png" width="80%"/>
        </div>
-       <h6>Byggt á daglega uppfærðum 
-       <a href = "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide">gögnum ECDC.</a>
+       <h6>Byggt á daglega uppfærðum gögnum frá 
+       <a href = "https://ourworldindata.org/coronavirus">Our World in Data.</a>
        Allan kóða má nálgast <a href="https://github.com/sindribaldur/dashboard_covid.hi.is/">hér.</a></h6>'
   )
 
