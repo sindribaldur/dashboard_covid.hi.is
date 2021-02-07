@@ -471,7 +471,7 @@ server <- function(input, output, session) {
         # input$gobutton_samanburdur
         d %>% 
             #arrange(country, date) %>% 
-            filter(continent %in% input$continent_samanburdur, total_cases > 0) %>%
+            filter(country %chin% get_count_per_cont(input$continent_samanburdur)) %>%
             group_by(country) %>% 
             mutate(
                 weekly_cases = fifelse(is.na(cases_n_weekly), cumsum(new_cases), cases_n_weekly),
