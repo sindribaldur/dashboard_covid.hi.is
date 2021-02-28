@@ -38,288 +38,150 @@ server <- function(input, output, session) {
     })
     
     throun_df <- reactive({
-        if (input$y_var == "total_cases") {
-            y_var_p = "case_rate"
-            y_var_n_daily = "new_cases"
-            y_var_n_weekly = "cases_n_weekly"
-            y_var_p_biweekly = "cases_p_biweekly"
-        } else {
-            y_var_p = "death_rate"
-            y_var_n_daily = "new_deaths"
-            y_var_n_weekly = "deaths_n_weekly"
-            y_var_p_biweekly = "deaths_p_biweekly"
-        }
         req(input$countries, input$chosen)
+        y_var_total      <- paste0("total_", input$y_var)
+        y_var_p          <- paste0("total_", input$y_var, "_per100k")
+        y_var_n_daily    <- paste0("new_", input$y_var)
+        y_var_n_weekly   <- paste0("new_", input$y_var, "_lw")
+        y_var_p_biweekly <- paste0("new_", input$y_var, "_l2w_per100k")
+
         if (input$filtervar == "ft") {
-            filtervar <- input$y_var
+            filtervar <- y_var_total
             filtervalue <- input$filtervalue 
         } else if (input$filtervar == "ftpm") { 
-            filtervar <- "case_rate"
+            filtervar <- "total_cases_per100k"
             filtervalue <- input$filtervalue / 10
         } else if (input$filtervar == "dags") {
             filtervar <- "date"
             filtervalue <- input$filtervalue_dags
         }
-        out <- d %>%
-            filter(
-                country %chin% input$countries, 
-                !!sym(filtervar) > filtervalue
-            ) %>%
-            mutate(
-              chosen = fifelse(country == input$chosen, "comp", "rest"),
-              y_var_n = !!sym(input$y_var),
-              y_var_n_daily = !!sym(y_var_n_daily),
-              y_var_p = !!sym(y_var_p),
-              y_var_n_weekly = !!sym(y_var_n_weekly),
-              y_var_p_biweekly = !!sym(y_var_p_biweekly)
-            )
-        # data.table::rowid() does same as group_by() + row_number()    
-        if (input$x_var == "skyl") mutate(out, days = rowid(country)) else out
+        d[input$countries
+          ][get(filtervar) > filtervalue,
+            .(
+                chosen = fifelse(country == input$chosen, "comp", "rest"),
+                y_var_n = get(y_var_total),
+                y_var_n_daily = get(y_var_n_daily),
+                y_var_p = get(y_var_p),
+                y_var_n_weekly = get(y_var_n_weekly),
+                y_var_p_biweekly = get(y_var_p_biweekly),
+                death_rate,
+                days = rowid(country),
+                country,
+                date
+            )]
     })
     
     # Fjöldi graf
-    euro_plot_n <- eventReactive(input$gobutton1, {
-        
-        if (input$y_var == "total_cases") {
-            yvar <- "greindra smita"
-        } else {
-            yvar <- "skráðra dauðsfalla"
-        }
-        
-        if (input$x_var == "skyl") {
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        days, y_var_n, 
-                        col = chosen,
-                        group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n)
-                    )
-                ) +
-                labs(
-                    title = "Þróun fjölda greindra smita",
-                    subtitle = "Sýnd eftir dögum frá öðru smiti hvers lands",
-                    x = "Dagar síðan skilyrði var náð",
-                    y = "Fjöldi greindra smita"
-                )
-        } else { 
-            # Eftir dagsetningu
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        date, y_var_n, 
-                        col = chosen,
-                        group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n),
-                    )
-                ) +
-                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
-                labs(
-                    title = paste("Þróun fjölda", yvar),
-                    subtitle = "Sýnd eftir dagsetningu",
-                    y = paste("Fjöldi", yvar)
-                ) +
-                theme(axis.title.x = element_blank())
-        }
-        p <- p + 
-            geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
-        p <- p +
-            if (input$scale == "Logra") {
-                scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
-            } else {
-                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F"))
-            }
-        ggplotly(p, tooltip = "text")
+    plot_n <- eventReactive(input$gobutton1, {
+        ylab <- switch(
+            input$y_var,
+            "cases" = "greindra smita",
+            "deaths" = "skráðra dauðsfalla", 
+            "vaccines" = "fullkláraðra bólusetninga"
+        )
+        ggplotly(
+            general_plot(
+                throun_df(),
+                yvar = "y_var_n",
+                ylab = ylab,
+                xdags = input$x_var != "skyl", 
+                logscale = input$scale == "Logra"
+            ),
+            tooltip = "text"
+        )
+    })
+    output$plot_n <- renderPlotly({
+        plot_n()
     })
     
-    output$euro_plot_n <- renderPlotly({
-        euro_plot_n()
+    # Fjöldi undanfarna viku
+    plot_n_weekly <- eventReactive(input$gobutton1, {
+        ylab <- switch(
+            input$y_var,
+            "cases" = "nýgreindra smita undanfarna viku",
+            "deaths" = "skráðra dauðsfalla undanfarna viku", 
+            "vaccines" = "fullkláraðra bólusetninga undanfarna viku"
+        )
+        ggplotly(
+            general_plot(
+                throun_df(),
+                yvar = "y_var_n_weekly",
+                ylab = ylab,
+                xdags = input$x_var != "skyl", 
+                logscale = input$scale == "Logra"
+            ),
+            tooltip = "text"
+        )
     })
-    
-    euro_plot_n_daily <- eventReactive(input$gobutton1, {
-        
-        if (input$y_var == "total_cases") {
-            yvar <- "nýgreindra smita undanfarna viku"
-        } else {
-            yvar <- "skráðra dauðsfalla undanfarna viku"
-        }
-        
-        if (input$x_var == "skyl") {
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        days, y_var_n_weekly, 
-                        col = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
-                    )
-                ) +
-                labs(
-                    title = paste("Þróun fjölda", yvar),
-                    subtitle = "Sýnd eftir dagsetningu",
-                    x = "Dagar síðan skilyrði var náð",
-                    y = paste("Fjöldi", yvar)
-                )
-        } else { 
-            # Eftir dagsetningu
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        date, y_var_n_weekly, 
-                        col = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", y_var_n_weekly)
-                    )
-                ) +
-                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
-                labs(
-                    title = paste("Þróun fjölda", yvar),
-                    subtitle = "Sýnd eftir dagsetningu",
-                    y = paste("Fjöldi", yvar)
-                ) +
-                theme(axis.title.x = element_blank())
-        }
-        p <- p + 
-            geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
-        p <- p +
-            if (input$scale == "Logra") {
-                scale_y_log10(labels = label_number(accuracy = 1, big.mark = "\U202F"))
-            } else {
-                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F"))
-            }
-        ggplotly(p, tooltip = "text")
-    })
-    
-    output$euro_plot_n_daily <- renderPlotly({
-        euro_plot_n_daily()
-    })
-    
-    # Tíðni graf
-    euro_plot_p <- eventReactive(input$gobutton1, {
-        if (input$y_var == "total_cases") {
-            yvar <- "smitaðra"
-        } else {
-            yvar <- "dauðsfalla"
-        }
-        
-        
-        if (input$x_var == "skyl") {
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        days, y_var_p,
-                        col = chosen, group = country,
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
-                    )
-                ) +
-                labs(
-                    title = ifelse(
-                        input$y_var == "total_cases", 
-                        "Þróun tíðni greindra smita (per 100.000 íbúa)",
-                        "Þróun dánartíðni (hlutfall smitaðra sem látast)"
-                    ),
-                    subtitle = ifelse(
-                        input$y_var == "total_cases",
-                        "Sýnd sem fjöldi á hverja 100.000 íbúa eftir dögum frá öðru smiti hvers lands",
-                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
-                    y = ifelse(input$y_var == "total_cases", 
-                               "Fjöldi smitaðra á hverja 100.000 íbúa",
-                               "Dánartíðni (hlutfall smitaðra sem hafa látist)"),
-                    x = "Dagar síðan skilyrði var náð"
-                )
-        } else {
-            # Eftir dagsetningu
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        date, y_var_p, 
-                        col = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p, 2))
-                    )
-                ) +
-                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
-                labs(
-                    title = ifelse(
-                        input$y_var == "total_cases", 
-                        "Þróun tíðni greindra smita (per 100.000 íbúa)",
-                        "Þróun dánartíðni (hlutfall smitaðra sem hafa látist)"
-                    ),
-                    subtitle = ifelse(
-                        input$y_var == "total_cases",
-                        "Sýnd sem fjöldi á hverja 100.000 íbúa eftir dögum frá öðru smiti hvers lands",
-                        "Sýnd sem fjöldi skráðra dauðsfalla gegn fjölda greindra smita"),
-                    y = ifelse(input$y_var == "total_cases", 
-                               "Fjöldi smitaðra á hverja 100.000 íbúa",
-                               "Dánartíðni (Fjöldi látinna / fjöldi smitaðra)"),
-                    x = "Dagar síðan skilyrði var náð"
-                ) +
-                theme(axis.title.x = element_blank())
-        }
-        p <- p +
-            geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
-        p <- p +
-            if (input$scale == "Logra") {
-                scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
-            } else {
-                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F", decimal.mark = ","))
-            }
-        ggplotly(p, tooltip = "text")
-    })
-    
-    output$euro_plot_p <- renderPlotly({
-        euro_plot_p()
-    })
-    
-    euro_plot_p_biweekly <- eventReactive(input$gobutton1, {
-        # Only available for total cases.
-        if (input$x_var == "skyl") {
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        days, y_var_p_biweekly,
-                        col = chosen, group = country,
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
-                    )
-                ) +
-                labs(
-                    title = "Greind smit síðustu tvær vikurnar (per 100.000 íbúa)",
-                    y = "Fjöldi smitaðra á hverja 100.000 íbúa",
-                    x = NULL
-                )
-        } else {
-            # Eftir dagsetningu
-            p <- throun_df() %>%
-                ggplot(
-                    aes(
-                        date, y_var_p_biweekly, 
-                        col = chosen, group = country, 
-                        text = paste0(country, ", ", format(date, "%d/%m"), "<br>", round(y_var_p_biweekly, 2))
-                    )
-                ) +
-                scale_x_date(labels = date_format("%d/%m"), breaks = pretty_breaks(8)) +
-                labs(
-                    title = "Greind smit síðustu tvær vikurnar (per 100.000 íbúa)",
-                    y = "Fjöldi smitaðra á hverja 100.000 íbúa",
-                    x = NULL
-                ) +
-                theme(axis.title.x = element_blank())
-        }
-        p <- p +
-            geom_line(show.legend = FALSE) +
-            scale_colour_manual(values = c(comp = "Blue", rest = "Black"))
-        p <- p +
-            if (input$scale == "Logra") {
-                scale_y_log10(labels = label_number(big.mark = "\U202F", decimal.mark = ","))
-            } else {
-                scale_y_continuous(labels = label_number(accuracy = 1, big.mark = "\U202F", decimal.mark = ","))
-            }
-        ggplotly(p, tooltip = "text")
+    output$plot_n_weekly <- renderPlotly({
+        plot_n_weekly()
     })
 
-    output$euro_plot_p_biweekly <- renderPlotly({
-        euro_plot_p_biweekly()
-    })    
+    # Fjöldi per 100k
+    plot_p <- eventReactive(input$gobutton1, {
+        ylab <- switch(
+            input$y_var,
+            "cases" = "smitaðra á hverja 100.000 íbúa",
+            "deaths" = "dauðsfalla á hverja 100.000 íbúa", 
+            "vaccines" = "fullkláraðra bólusetninga á hverja 100.000 íbúa"
+        )
+        ggplotly(
+            general_plot(
+                throun_df(),
+                yvar = "y_var_p",
+                ylab = ylab,
+                xdags = input$x_var != "skyl", 
+                logscale = input$scale == "Logra"
+            ),
+            tooltip = "text"
+        )
+    })
+    output$plot_p <- renderPlotly({
+        plot_p()
+    })
+
+    # Fjöldi undanfarnar 2 vikur per 100k
+    plot_p_biweekly <- eventReactive(input$gobutton1, {
+          ylab <- switch(
+              input$y_var,
+              "cases" = "smitaðra síðustu tvær vikurnar (per 100.000 íbúa)",
+              "deaths" = "dauðsfalla síðustu tvær vikurnar (per 100.000 íbúa)", 
+              "vaccines" = "fullkláraðra bólusetninga síðustu tvær vikurnar (per 100.000 íbúa)"
+          )
+          ggplotly(
+              general_plot(
+                  throun_df(),
+                  yvar = "y_var_p_biweekly",
+                  ylab = ylab,
+                  xdags = input$x_var != "skyl", 
+                  logscale = input$scale == "Logra"
+              ),
+              tooltip = "text"
+          )
+    })
+    output$plot_p_biweekly <- renderPlotly({
+        plot_p_biweekly()
+    })
+
+    # Dánartíðni
+    plot_death_rate <- eventReactive(input$gobutton1, {
+          ggplotly(
+              general_plot(
+                  throun_df(),
+                  yvar = "death_rate",
+                  ylab = 'Dánartíðni (hlutfall smitaðra sem hafa látist)',
+                  xdags = input$x_var != "skyl", 
+                  logscale = input$scale == "Logra",
+                  perc = TRUE
+              ),
+              tooltip = "text"
+          )
+    })
+    output$plot_death_rate <- renderPlotly({
+        plot_death_rate()
+    })
+
+
 
 
     ##### Aukning LMER #####
@@ -565,8 +427,8 @@ server <- function(input, output, session) {
               Dauðsföll = total_deaths,
               `Dánartíðni (per smit)` = death_rate,
               `Dánartíðni (per 100.000)` = total_deaths_per100k,
-              `Bólusetningar` = total_vaccines,
-              `Bólusetningatíðni` = total_vaccines_per100k / 100000  
+              `Fullkláraðar bólusetningar` = total_vaccines,
+              `Bólusetningatíðni (per 100.000)` = total_vaccines_per100k / 100000  
             )]
     })
     
@@ -587,7 +449,7 @@ server <- function(input, output, session) {
                 )
             )
         ) %>%
-            formatPercentage(c("Smitatíðni", "Dánartíðni (per smit)", "Bólusetningatíðni"), 2) %>%
+            formatPercentage(c("Smitatíðni", "Dánartíðni (per smit)", "Bólusetningatíðni (per 100.000)"), 2) %>%
             formatRound(c("Dánartíðni (per 100.000)"), digits = 2) %>%
             formatStyle(
               target = 'row', columns = 'Land',  

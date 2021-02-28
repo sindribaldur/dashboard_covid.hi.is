@@ -19,6 +19,9 @@ theme_set(
 )
 options(OutDec = ",") # For DT
 
+if (.Platform$OS.type == "unix") {
+  Sys.setlocale("LC_TIME", "is_IS.utf8")
+}
 
 # Constants ----
 default_countries <- "Ísland" # Has to be in Europe
@@ -43,4 +46,54 @@ setkey(d, country)
 # Functions -----
 get_count_per_cont <- function(cont) {
    names(count_cont_vec)[count_cont_vec %chin% cont]
+}
+
+format_date <- function() function(x) sub("^0", "", format(x, "%d. %b %Y"))
+
+general_plot <- function(df = throun_df(), yvar = 'y_var_n', ylab = '', xdags = TRUE,
+                         logscale = FALSE, perc = FALSE) {
+    prefix_title = if (perc) '' else 'Þróun fjölda'
+    prefix_ylab  = if (perc) '' else 'Fjöldi'
+    ggplot(
+        df,
+        aes(
+            text = paste0(
+              country, ", ", format_date()(date), "<br>",
+              if (is.integer(get(yvar))) {
+                  get(yvar) 
+              } else if (perc) {
+                  paste0(round(get(yvar) * 100, 2), '%')
+              } else {
+                  round(get(yvar), 2)
+              }
+            )
+        )
+    ) +
+    geom_line(
+        aes_string(
+            if (xdags) "date" else "days",  
+            yvar, 
+            col = "chosen",
+            group = "country"
+        ),
+        show.legend = FALSE
+    ) +
+    scale_colour_manual(values = c(comp = "Blue", rest = "Black")) +
+    {
+        if (xdags) {
+            scale_x_date(labels = format_date(), breaks = pretty_breaks(8))
+        } else {
+            NULL
+        }
+    } + 
+    labs(
+        title = paste(prefix_title, ylab),
+        y = paste(prefix_ylab, ylab),
+        x = if (xdags) NULL else "Dagar síðan skilyrði var náð"
+    ) + 
+    if (logscale) {
+        scale_y_log10(labels = if (perc) scales::percent else label_number(accuracy = 1, big.mark = "\U202F"))
+    } else {
+        scale_y_continuous(labels = if (perc) scales::percent else label_number(accuracy = 1, big.mark = "\U202F"))
+    }
 }
