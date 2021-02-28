@@ -182,7 +182,7 @@ ui <- navbarPage(
                 HTML(sidebar_info)
             ),
             mainPanel(
-                dataTableOutput("summary_table")
+                DTOutput(outputId = "summary_table")
             )
         )
     )

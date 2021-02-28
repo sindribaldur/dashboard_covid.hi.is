@@ -556,20 +556,21 @@ server <- function(input, output, session) {
     })
     
     summary_table <- eventReactive(input$gobutton2, {
-      d[country %chin% input$countries_table, .SD[.N], country
-        ][, .(Land = country,
+      d[input$countries_table
+        ][, .SD[.N], country
+         ][, .(Land = country,
               Fólksfjöldi = count_pop[country],
               Tilfelli = total_cases, 
-              `Smitatíðni` = total_cases / count_pop[country],
+              `Smitatíðni` = total_cases_per100k / 100000,
               Dauðsföll = total_deaths,
-              `Dánartíðni (per smit)` = total_deaths/total_cases,
-              `Dánartíðni (per 100.000)` = total_deaths / count_pop[country] * 100000,
+              `Dánartíðni (per smit)` = death_rate,
+              `Dánartíðni (per 100.000)` = total_deaths_per100k,
               `Bólusetningar` = total_vaccines,
-              `Bólusetningatíðni` = total_vaccines / count_pop[country]
+              `Bólusetningatíðni` = total_vaccines_per100k / 100000  
             )]
     })
     
-    output$summary_table <- renderDataTable({
+    output$summary_table <- renderDT({
         req(input$chosen_table)
         datatable(
             summary_table(),
