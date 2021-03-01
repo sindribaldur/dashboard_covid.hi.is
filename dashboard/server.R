@@ -257,7 +257,7 @@ server <- function(input, output, session) {
                 filter(date %between% c(input$date_from_samanburdur, input$date_to_samanburdur))
             ekki_byrjud <- d %>% 
                 group_by(country) %>% 
-                summarise(ekki_med_case = any(case_rate == 0)) %>% 
+                summarise(ekki_med_case = any(total_cases_per100k == 0)) %>% 
                 filter(ekki_med_case) %>% 
                 pull(country)
             d <- d %>% filter(!country %in% ekki_byrjud)
@@ -267,33 +267,32 @@ server <- function(input, output, session) {
                 filter_value <- input$filtervalue_samanburdur
             }
             else {
-                filter_var <- "case_rate"
+                filter_var <- "total_cases_per100k"
                 filter_value <- input$filtervalue_samanburdur / 1000
             }
             d <- d %>% filter(!!sym(filter_var) >= filter_value)
         }
         m <- lmer(
-            log(case_rate) ~ days + (days | country),
+            log(total_cases_per100k) ~ days + (days | country),
             data = d,
             control = lmerControl(optimizer = "bobyqa")
         )
         temp <- as_tibble(coef(m)$country, rownames = "country") %>%
             select(-`(Intercept)`) %>%
             mutate(
-                col = if_else(country == input$chosen_samanburdur, "blue", "grey"),
+                col = fifelse(country == input$chosen_samanburdur, "blue", "grey"),
                 change = exp(days) - 1,
                 country = factor(reorder(country, change)),
             )
         evo_chosen <- temp %>% filter(col == "blue") %>% pull(round(change, 3))
         mean_evo <- exp(fixef(m)[2]) - 1
         p <- temp %>%
-            ggplot(aes(country, change)) +
+            ggplot(aes(x = country, y = change, text = with(temp, sprintf('%s: %.02f%%', country, change*100)))) +
             geom_point(aes(col = col), show.legend = FALSE) +
             geom_segment(aes(xend = country, yend = 0, col = col), show.legend = FALSE) +
             geom_hline(yintercept = exp(summary(m)$coefficients[2, 1]) - 1, lty = 2) +
-            # Meðalaukning
             geom_text(
-                aes(label = "Meðalaukning", x = 2, y = mean_evo + 0.01), 
+                aes(label = "Meðalaukning", x = 2, y = mean_evo*1.25, text = ''), 
                 size = 4
             ) +
             scale_y_continuous(
@@ -312,7 +311,7 @@ server <- function(input, output, session) {
             p <- p + 
                 geom_text(
                     data = tibble(),
-                    aes(label = percent(evo_chosen), x = input$chosen_samanburdur, y = evo_chosen + 0.02), 
+                    aes(label = percent(evo_chosen), x = input$chosen_samanburdur, y = evo_chosen + 0.06*max(temp$change), text = ''), 
                     col = "blue", 
                     size = 4
                 )
@@ -320,7 +319,7 @@ server <- function(input, output, session) {
         if (nrow(temp) > 60) {
             p <- p + theme(axis.text.y = element_text(size = 5))
         }
-        ggplotly(p, tooltip = c("x", "y", "country"))
+        ggplotly(p, tooltip = 'text')
     })
     
     output$lmer_plot <- renderPlotly({
@@ -336,7 +335,7 @@ server <- function(input, output, session) {
             filter(country %chin% get_count_per_cont(input$continent_samanburdur)) %>%
             group_by(country) %>% 
             mutate(
-                weekly_cases = fifelse(is.na(cases_n_weekly), cumsum(new_cases), cases_n_weekly),
+                weekly_cases = fifelse(is.na(new_cases_lw), cumsum(new_cases), new_cases_lw),
                 chosen = fifelse(country == input$chosen_samanburdur, "comp", "rest")
             ) %>%
             ungroup()
@@ -428,7 +427,7 @@ server <- function(input, output, session) {
               `Dánartíðni (per smit)` = death_rate,
               `Dánartíðni (per 100.000)` = total_deaths_per100k,
               `Fullkláraðar bólusetningar` = total_vaccines,
-              `Bólusetningatíðni (per 100.000)` = total_vaccines_per100k / 100000  
+              `Bólusetningatíðni` = total_vaccines_per100k / 100000  
             )]
     })
     
@@ -449,7 +448,7 @@ server <- function(input, output, session) {
                 )
             )
         ) %>%
-            formatPercentage(c("Smitatíðni", "Dánartíðni (per smit)", "Bólusetningatíðni (per 100.000)"), 2) %>%
+            formatPercentage(c("Smitatíðni", "Dánartíðni (per smit)", "Bólusetningatíðni"), 2) %>%
             formatRound(c("Dánartíðni (per 100.000)"), digits = 2) %>%
             formatStyle(
               target = 'row', columns = 'Land',  
