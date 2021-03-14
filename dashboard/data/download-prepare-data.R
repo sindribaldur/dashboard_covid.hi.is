@@ -21,7 +21,7 @@ d[continent %chin% conti_tr$en, continent := conti_tr[.SD, on = .(en = continent
 
 
 # Helper objects
-date_range <- c(min(d$date), max(d$date)) # Faster than range()
+date_range <- as.Date(c(min(d$date), max(d$date))) # Faster than range()
 count_cont_vec <- d[, unique(.SD), .SDcols = c("continent", "country")
   ][, setNames(continent, country)]
 count_pop <- d[, as.integer(max(pop)), by = country][, setNames(V1, country)]

@@ -1,7 +1,6 @@
 # Packages ----
 library(cowplot)
 library(data.table)
-library(dplyr)
 library(ggplot2)
 library(DT)
 library(lme4)
@@ -42,13 +41,16 @@ sidebar_info <-
 # Load data ----
 load("./data/data.rdata")
 setkey(d, country)
-
+date_range <- as.Date(date_range)
 # Functions -----
 get_count_per_cont <- function(cont) {
    names(count_cont_vec)[count_cont_vec %chin% cont]
 }
 
 format_date <- function() function(x) sub("^0", "", format(x, "%d. %b %Y"))
+format_perc <- function(x, digits = 2L) {
+    sub(".", ",", sprintf('%.0*f%%', digits, x*100), fixed = TRUE)
+}
 
 general_plot <- function(df = throun_df(), yvar = 'y_var_n', ylab = '', xdags = TRUE,
                          logscale = FALSE, perc = FALSE) {
